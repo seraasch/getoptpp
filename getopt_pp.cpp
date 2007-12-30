@@ -28,7 +28,10 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 	// parse arguments by their '-' or '--':
 	for(int i=1; i < argc; i++)
 	{
-		if (argv[i][0] == '-')
+		const char current = argv[i][0];
+		const char next = argv[i][1];
+		
+		if (current == '-' && (isalpha(next) || next == '-' ) )
 		{
 			// save previous option, if any
 			if (currentOpt != NULL)
@@ -43,7 +46,7 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 			}
 			
 			// now see what's next, differentiate whether it's short or long:
-			if (argv[i][1] == '-' && argv[i][2] != 0)
+			if (next == '-' && argv[i][2] != 0)
 			{
 				currentOpt = &argv[i][2];
 				isShort = false;
@@ -75,10 +78,26 @@ GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt)
 {
 	_last = opt(_shortOps, _longOps);
 	
-	if (_last == _Option::OptionNotFound && (_exc & std::ios_base::eofbit ) )
-		throw 1;
-	else if (_last == _Option::BadType && (_exc & std::ios_base::failbit ) )
-		throw 2;
+	switch(_last)
+	{
+		case _Option::OK: 
+			break;
+			
+		case _Option::OptionNotFound:
+			if (_exc & std::ios_base::eofbit )
+				throw 1;
+			break;
+			
+		case _Option::BadType:
+			if (_exc & std::ios_base::failbit )
+				throw 2;
+			break;
+			
+		case _Option::NoArgs:
+			if (_exc & std::ios_base::eofbit )
+				throw 3;
+			break;
+	}
 		
 	return *this;
 }

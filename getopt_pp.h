@@ -24,6 +24,7 @@ GetOpt_pp:	Yet another C++ version of getopt.
 #include <map>
 #include <sstream>
 
+
 /*
 	DESIGN GOALS:
 		- EASY to use
@@ -51,31 +52,20 @@ struct _Option
 	virtual ~_Option(){}
 };
 
-template <class T> class _OptionT : public _Option
+template <class T> class _OptionTBase : public _Option
 {
 	const char short_opt;
 	const std::string long_opt;
-	T& target;
 protected:
-	virtual Result _assign(const OptionArgs& args) const
-	{
-		if (!args.empty())
-		{
-			std::stringstream ss;
-			ss << args[0];
-			ss >> target;
-			return OK;
-		}
-		else
-			return NoArgs;
-	}
+	T& target;
+	virtual Result _assign(const OptionArgs& args) const = 0;
 	
 public:
-	_OptionT(const _OptionT<T>& other)
+	_OptionTBase(const _OptionTBase<T>& other)
 		: short_opt(other.short_opt), long_opt(other.long_opt), target(other.target)
 	{}
 	
-	_OptionT(char short_opt, const std::string& long_opt, T& target)
+	_OptionTBase(char short_opt, const std::string& long_opt, T& target)
 		: short_opt(short_opt), long_opt(long_opt), target(target)
 	{}
 	
@@ -95,6 +85,56 @@ public:
 
 		return ret;
 	}
+};
+
+template <class T> class _OptionT : public _OptionTBase<T>
+{
+	virtual _Option::Result _assign(const OptionArgs& args) const
+	{
+		if (!args.empty())
+		{
+			std::stringstream ss;
+			ss.clear();
+			ss << args[0];
+			ss >> this->target;
+			//if (ss.str().empty())
+				return ss.fail() ? _Option::BadType : _Option::OK;
+			//else
+			//	return BadType;
+		}
+		else
+			return _Option::NoArgs;
+	}
+public:	
+	_OptionT(const _OptionT<T>& other)
+		: _OptionTBase<T>(other)
+	{}
+	
+	_OptionT(char short_opt, const std::string& long_opt, T& target)
+		: _OptionTBase<T>(short_opt, long_opt, target)
+	{}
+};
+
+template <> class _OptionT<std::string> : public _OptionTBase<std::string>
+{
+	virtual _Option::Result _assign(const OptionArgs& args) const
+	{
+		if (!args.empty())
+		{
+			target = args[0];
+			return _Option::OK;
+		}
+		else
+			return _Option::NoArgs;
+	}
+public:	
+	_OptionT(const _OptionT<std::string>& other)
+		: _OptionTBase<std::string>(other)
+	{}
+	
+	_OptionT(char short_opt, const std::string& long_opt, std::string& target)
+		: _OptionTBase<std::string>(short_opt, long_opt, target)
+	{}
 };
 
 
