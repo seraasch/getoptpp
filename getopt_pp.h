@@ -150,6 +150,29 @@ _OptionT<T> Option(char short_opt, T& target)
 	return _OptionT<T>(short_opt, std::string(), target);
 }
 
+struct OptionPresent : _Option
+{
+	const char short_opt;
+	const std::string& long_opt;
+	bool& present;
+	
+	OptionPresent(char short_opt, const std::string& long_opt, bool& present)
+		: short_opt(short_opt), long_opt(long_opt), present(present)
+	{}
+	
+	virtual Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const
+	{
+		ShortOptions::const_iterator it = short_ops.find(short_opt);
+		
+		present = (it != short_ops.end());
+		if (!present)
+		{
+			present = (long_ops.find(long_opt) != long_ops.end());
+		}
+		
+		return OK;
+	}
+};
 
 class GetOpt_pp
 {

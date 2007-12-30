@@ -35,19 +35,22 @@ int main(int argc, char* argv[])
 	int test1 = 10;
 	float test2 = 3.14f;
 	std::string test3 = "hello";
+	bool flag;
 	
 	try
 	{	
 		GetOpt_pp ops(argc, argv);
-		
+					
 		ops.exceptions(std::ios::failbit | std::ios::eofbit);
 		
 		ops 
 			>> Option('i', "test1", test1)
 			>> Option('f', test2)
-			>> Option('s', "string", test3);
-		
-		std::cout << test1 << "\n" << test2 << "\n" << test3 << "\n";
+			>> Option('s', "string", test3)
+			>> OptionPresent('x', "flag", flag)
+		;
+
+		std::cout << test1 << "\n" << test2 << "\n" << test3 << "\n" << flag << "\n";
 		return 0;
 	}
 	catch(int x)
