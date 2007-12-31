@@ -25,7 +25,7 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
 int main(int argc, char* argv[])
 {
-	std::string name = "world";
+	std::string name;
 	
 	GetOpt_pp ops(argc, argv);
 	
