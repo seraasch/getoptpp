@@ -16,7 +16,10 @@ GetOpt_pp:	Yet another C++ version of getopt.
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-    Example of a Hello World.    
+    Example of a Hello World.
+    Usage:
+    	short option: -n Name
+    	long option:  --name Name
     
 */
 
@@ -29,7 +32,7 @@ int main(int argc, char* argv[])
 	
 	GetOpt_pp ops(argc, argv);
 	
-	ops >> Option('n', "name", name, "world" );
+	ops >> Option('n', "name", name, "world" );		/* the default name is 'world' */
 	
 	std::cout << "Hello " << name << "!" << std::endl;
 	
