@@ -1,5 +1,9 @@
 Changelog since version 0.4.
 
+Version 0.5
+===========
+    * Everything enclosed within GetOpt namespace.
+
 Version 0.4
 ===========
     * Added default values support.
