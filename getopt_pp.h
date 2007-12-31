@@ -89,6 +89,7 @@ public:
 
 template <class T> class _OptionT : public _OptionTBase<T>
 {
+protected:
 	virtual _Option::Result _assign(const OptionArgs& args) const
 	{
 		if (!args.empty())
@@ -113,10 +114,12 @@ public:
 	_OptionT(char short_opt, const std::string& long_opt, T& target)
 		: _OptionTBase<T>(short_opt, long_opt, target)
 	{}
+
 };
 
 template <> class _OptionT<std::string> : public _OptionTBase<std::string>
 {
+protected:
 	virtual _Option::Result _assign(const OptionArgs& args) const
 	{
 		if (!args.empty())
@@ -127,28 +130,82 @@ template <> class _OptionT<std::string> : public _OptionTBase<std::string>
 		else
 			return _Option::NoArgs;
 	}
+	
 public:	
 	_OptionT(const _OptionT<std::string>& other)
 		: _OptionTBase<std::string>(other)
 	{}
-	
+
 	_OptionT(char short_opt, const std::string& long_opt, std::string& target)
 		: _OptionTBase<std::string>(short_opt, long_opt, target)
 	{}
 };
 
+template <class T, class BaseOption>
+class _DefValOption : public BaseOption
+{
+	const T& default_value;
+public:
+	
+	_DefValOption(const _DefValOption<T, BaseOption>& other)
+		: BaseOption(other), default_value(other.default_value)
+	{}
+
+	_DefValOption(char short_opt, const std::string& long_opt, T& target, const T& default_value)
+		: BaseOption(short_opt, long_opt, target), default_value(default_value)
+	{}
+
+	virtual _Option::Result _assign(const OptionArgs& args) const
+	{
+		_Option::Result ret;
+		
+		ret = BaseOption::_assign(args);
+		
+		if (ret == _Option::OptionNotFound)
+		{
+			this->target = default_value;
+			return _Option::OK;
+		}
+	}
+};
+
 
 template <class T>
-_OptionT<T> Option(char short_opt, const std::string& long_opt, T& target)
+inline _OptionT<T> Option(char short_opt, const std::string& long_opt, T& target)
 {
 	return _OptionT<T>(short_opt, long_opt, target);
 }
 
 template <class T>
-_OptionT<T> Option(char short_opt, T& target)
+inline _OptionT<T> Option(char short_opt, T& target)
 {
 	return _OptionT<T>(short_opt, std::string(), target);
 }
+
+// Defaulted version
+template <class T>
+inline _OptionT<T> Option(char short_opt, const std::string& long_opt, T& target, const T& def)
+{
+	return _DefValOption<T, _OptionT<T> >(short_opt, long_opt, target, def);
+}
+
+template <class T>
+inline _OptionT<T> Option(char short_opt, T& target, const T& def)
+{
+	return _DefValOption<T, _OptionT<T> >(short_opt, std::string(), target, def);
+}
+
+// Defaults for strings:
+inline _OptionT<std::string> Option(char short_opt, const std::string& long_opt, std::string& target, const char* def)
+{
+	return _DefValOption<std::string, _OptionT<std::string> >(short_opt, long_opt, target, def);
+}
+
+inline _OptionT<std::string> Option(char short_opt, std::string& target, const char* def)
+{
+	return _DefValOption<std::string, _OptionT<std::string> >(short_opt, std::string(), target, def);
+}
+
 
 struct OptionPresent : _Option
 {
