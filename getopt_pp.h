@@ -24,7 +24,6 @@ GetOpt_pp:	Yet another C++ version of getopt.
 #include <map>
 #include <sstream>
 
-
 /*
 	DESIGN GOALS:
 		- EASY to use
@@ -144,7 +143,7 @@ public:
 template <class T, class BaseOption>
 class _DefValOption : public BaseOption
 {
-	const T& default_value;
+	const T default_value;
 public:
 	
 	_DefValOption(const _DefValOption<T, BaseOption>& other)
@@ -155,17 +154,17 @@ public:
 		: BaseOption(short_opt, long_opt, target), default_value(default_value)
 	{}
 
-	virtual _Option::Result _assign(const OptionArgs& args) const
+	virtual _Option::Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const
 	{
-		_Option::Result ret;
-		
-		ret = BaseOption::_assign(args);
+		_Option::Result ret = BaseOption::operator()(short_ops, long_ops);
 		
 		if (ret == _Option::OptionNotFound)
 		{
 			this->target = default_value;
-			return _Option::OK;
+			ret = _Option::OK;
 		}
+
+		return ret;
 	}
 };
 
@@ -184,19 +183,21 @@ inline _OptionT<T> Option(char short_opt, T& target)
 
 // Defaulted version
 template <class T>
-inline _OptionT<T> Option(char short_opt, const std::string& long_opt, T& target, const T& def)
+inline _DefValOption<T, _OptionT<T> > 
+Option(char short_opt, const std::string& long_opt, T& target, const T& def)
 {
 	return _DefValOption<T, _OptionT<T> >(short_opt, long_opt, target, def);
 }
 
 template <class T>
-inline _OptionT<T> Option(char short_opt, T& target, const T& def)
+inline _DefValOption<T, _OptionT<T> > Option(char short_opt, T& target, const T& def)
 {
 	return _DefValOption<T, _OptionT<T> >(short_opt, std::string(), target, def);
 }
 
 // Defaults for strings:
-inline _OptionT<std::string> Option(char short_opt, const std::string& long_opt, std::string& target, const char* def)
+inline _DefValOption<std::string, _OptionT<std::string> > 
+Option(char short_opt, const std::string& long_opt, std::string& target, const char* def)
 {
 	return _DefValOption<std::string, _OptionT<std::string> >(short_opt, long_opt, target, def);
 }
