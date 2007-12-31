@@ -1,8 +1,14 @@
-Changelog since version 0.4.
+Version 0.6
+===========
+    * fixed bug in OptionPresent.
+    * Now, OptionPresent receives optionally a target bool. If it's not present, returns the result
+	in the >> operator.
+
 
 Version 0.5
 ===========
     * Everything enclosed within GetOpt namespace.
+
 
 Version 0.4
 ===========

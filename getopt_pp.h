@@ -212,27 +212,53 @@ inline _OptionT<std::string> Option(char short_opt, std::string& target, const c
 }
 
 
-struct OptionPresent : _Option
+class OptionPresent : public _Option
 {
 	const char short_opt;
-	const std::string& long_opt;
-	bool& present;
+	const std::string long_opt;
+	bool* const present;
+public:
+	// two combinations: with/without target, and with/without long opt.
 	
+	// WITH long_opt:
 	OptionPresent(char short_opt, const std::string& long_opt, bool& present)
-		: short_opt(short_opt), long_opt(long_opt), present(present)
+		: short_opt(short_opt), long_opt(long_opt), present(&present)
+	{}
+
+	OptionPresent(char short_opt, const std::string& long_opt)
+		: short_opt(short_opt), long_opt(long_opt), present(NULL)
 	{}
 	
+	// WITHOUT long_opt:
+	OptionPresent(char short_opt, bool& present)
+		: short_opt(short_opt), present(&present)
+	{}
+
+	OptionPresent(char short_opt)
+		: short_opt(short_opt), present(NULL)
+	{}
+	
+protected:
 	virtual Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const
 	{
+		bool found;
 		ShortOptions::const_iterator it = short_ops.find(short_opt);
 		
-		present = (it != short_ops.end());
-		if (!present)
+		found = (it != short_ops.end());
+		if (!found && !long_opt.empty())
 		{
-			present = (long_ops.find(long_opt) != long_ops.end());
+			found = (long_ops.find(long_opt) != long_ops.end());
 		}
 		
-		return OK;
+		if (present != NULL)
+		{
+			*present = found;
+			return OK;
+		}
+		else
+		{
+			return found ? OK : OptionNotFound;
+		}
 	}
 };
 
