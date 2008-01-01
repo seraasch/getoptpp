@@ -76,32 +76,46 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 		else
 			_longOps[currentOpt] = currentArgs;
 	}
+	
+	_last = _Option::OK;	// TODO: IMPROVE!!
 }
 
-GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt)
+GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
 {
-	_last = opt(_shortOps, _longOps);
-	
-	switch(_last)
+	if (_last != _Option::ParsingError)
 	{
-		case _Option::OK: 
-			break;
-			
-		case _Option::OptionNotFound:
-			if (_exc & std::ios_base::eofbit )
-				throw 1;
-			break;
-			
-		case _Option::BadType:
-			if (_exc & std::ios_base::failbit )
-				throw 2;
-			break;
-			
-		case _Option::NoArgs:
-			if (_exc & std::ios_base::eofbit )
-				throw 3;
-			break;
+		_last = opt(_shortOps, _longOps);
+		
+		switch(_last)
+		{
+			case _Option::OK: 
+				break;
+				
+			case _Option::OptionNotFound:
+				if (_exc & std::ios_base::eofbit )
+					throw OptionNotFoundEx();
+				break;
+				
+			case _Option::BadType:
+				if (_exc & std::ios_base::failbit )
+					throw InvalidFormatEx();
+				break;
+				
+			case _Option::NoArgs:
+				if (_exc & std::ios_base::eofbit )
+					throw ArgumentNotFoundEx();
+				break;
+				
+			case _Option::TooManyArgs:
+				if (_exc & std::ios_base::failbit )
+					throw TooManyArgumentsEx();
+				break;
+				
+			case _Option::ParsingError: break;	// just to disable warning
+		}
 	}
+	else if (_exc & std::ios_base::failbit )
+		throw ParsingErrorEx();
 		
 	return *this;
 }

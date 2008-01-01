@@ -1,3 +1,8 @@
+Version 0.7
+===========
+    * Added exception hierarchy, instead of throwing an integer.
+    
+
 Version 0.6
 ===========
     * fixed bug in OptionPresent.

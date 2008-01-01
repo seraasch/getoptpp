@@ -46,9 +46,11 @@ struct _Option
 	enum Result
 	{
 		OK,
+		ParsingError,
 		OptionNotFound,
 		BadType,
-		NoArgs
+		NoArgs,
+		TooManyArgs
 	};
 
 	virtual Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const = 0;
@@ -94,20 +96,27 @@ template <class T> class _OptionT : public _OptionTBase<T>
 {
 protected:
 	virtual _Option::Result _assign(const OptionArgs& args) const
-	{
-		if (!args.empty())
+	{		
+		switch (args.size())
 		{
-			std::stringstream ss;
-			ss.clear();
-			ss << args[0];
-			ss >> this->target;
-			//if (ss.str().empty())
+			case 0:
+				return _Option::NoArgs;
+				
+			case 1:
+			{
+				std::stringstream ss;
+				ss.clear();
+				ss << args[0];
+				ss >> this->target;
+				//if (ss.str().empty())
 				return ss.fail() ? _Option::BadType : _Option::OK;
-			//else
-			//	return BadType;
+				//else
+				//	return BadType;
+			}	
+			default:
+				return _Option::TooManyArgs;
 		}
-		else
-			return _Option::NoArgs;
+			
 	}
 public:	
 	_OptionT(const _OptionT<T>& other)
@@ -125,13 +134,18 @@ template <> class _OptionT<std::string> : public _OptionTBase<std::string>
 protected:
 	virtual _Option::Result _assign(const OptionArgs& args) const
 	{
-		if (!args.empty())
+		switch(args.size())
 		{
-			target = args[0];
-			return _Option::OK;
+			case 0:
+				return _Option::NoArgs;
+				
+			case 1:
+				target = args[0];
+				return _Option::OK;
+				
+			default:
+				return _Option::TooManyArgs;
 		}
-		else
-			return _Option::NoArgs;
 	}
 	
 public:	
@@ -262,12 +276,20 @@ protected:
 	}
 };
 
+class GetOptEx : std::exception {};
+struct ParsingErrorEx : GetOptEx{};
+struct InvalidFormatEx : GetOptEx{};
+struct ArgumentNotFoundEx : GetOptEx{};
+struct TooManyArgumentsEx : GetOptEx{};
+struct OptionNotFoundEx : GetOptEx{};
+
 class GetOpt_pp
 {
 	ShortOptions _shortOps;
 	LongOptions _longOps;
 	std::ios_base::iostate _exc;
 	_Option::Result _last;
+
 public:
 	GetOpt_pp(int argc, char* argv[]);
 	
@@ -276,7 +298,7 @@ public:
 	
 	operator bool() const							{ return _last == _Option::OK;	}
 	
-	GetOpt_pp& operator >> (const _Option& opt);
+	GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
 };
 
 }
