@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
 	float test2 = 3.14f;
 	std::string test3 = "hello";
 	bool flag;
+	std::vector<int> vec_int;
 	
 	try
 	{	
@@ -52,14 +53,21 @@ int main(int argc, char* argv[])
 			>> Option('f', test2)
 			>> Option('s', "string", test3)
 			>> OptionPresent('x', "flag", flag)
+			>> Option('v', "vec", vec_int)
 		;
 
 		std::cout << test1 << "\n" << test2 << "\n" << test3 << "\n" << flag << "\n";
+		
+		for(std::vector<int>::const_iterator it = vec_int.begin(); it != vec_int.end(); ++it)
+			std::cout << *it << " ";
+			
+		std::cout << std::endl;
+
 		return 0;
 	}
-	catch(int x)
+	catch(const GetOptEx& e)
 	{
-		std::cerr << "Exc: " << x << "\n";
+		std::cerr << "Invalid options\n";
 	}
 }
 

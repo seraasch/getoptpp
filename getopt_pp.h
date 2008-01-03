@@ -57,6 +57,25 @@ struct _Option
 	virtual ~_Option(){}
 };
 
+template <class T> static inline _Option::Result convert(const std::string& s, T& result)
+{
+	std::stringstream ss;
+	ss.clear();
+	ss << s;
+	ss >> result;
+	//if (ss.str().empty())
+	return ss.fail() ? _Option::BadType : _Option::OK;
+	//else
+	//	return BadType;
+}
+
+template <> static inline _Option::Result convert<std::string>(const std::string& s, std::string& result)
+{
+	result = s;
+	return _Option::OK;
+}
+
+
 template <class T> class _OptionTBase : public _Option
 {
 	const char short_opt;
@@ -92,6 +111,7 @@ public:
 	}
 };
 
+
 template <class T> class _OptionT : public _OptionTBase<T>
 {
 protected:
@@ -103,16 +123,8 @@ protected:
 				return _Option::NoArgs;
 				
 			case 1:
-			{
-				std::stringstream ss;
-				ss.clear();
-				ss << args[0];
-				ss >> this->target;
-				//if (ss.str().empty())
-				return ss.fail() ? _Option::BadType : _Option::OK;
-				//else
-				//	return BadType;
-			}	
+				return convert<T>(args[0], this->target);
+
 			default:
 				return _Option::TooManyArgs;
 		}
@@ -157,6 +169,43 @@ public:
 		: _OptionTBase<std::string>(short_opt, long_opt, target)
 	{}
 };
+
+template <> template <class T> class _OptionT<std::vector<T> > : public _OptionTBase<std::vector<T> >
+{
+protected:
+	virtual _Option::Result _assign(const OptionArgs& args) const
+	{
+		if (!args.empty())
+		{
+			_Option::Result result;
+			OptionArgs::const_iterator it = args.begin();
+			T temp;
+			
+			do
+			{
+				result = convert<T>(*it, temp);
+				if (result == _Option::OK)
+					this->target.push_back(temp);
+					
+				++it;
+			} while(it != args.end() && result == _Option::OK);
+			
+			return result;
+		}
+		else
+			return _Option::NoArgs;
+	}
+	
+public:	
+	_OptionT(const _OptionT<std::vector<T> >& other)
+		: _OptionTBase<std::vector<T> >(other)
+	{}
+
+	_OptionT(char short_opt, const std::string& long_opt, std::vector<T>& target)
+		: _OptionTBase<std::vector<T> >(short_opt, long_opt, target)
+	{}
+};
+
 
 template <class T, class BaseOption>
 class _DefValOption : public BaseOption
@@ -276,7 +325,7 @@ protected:
 	}
 };
 
-class GetOptEx : std::exception {};
+class GetOptEx : public std::exception {};
 struct ParsingErrorEx : GetOptEx{};
 struct InvalidFormatEx : GetOptEx{};
 struct ArgumentNotFoundEx : GetOptEx{};
@@ -299,6 +348,38 @@ public:
 	operator bool() const							{ return _last == _Option::OK;	}
 	
 	GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
+
+	// Alternative to manipulators, for those who don't like them: the 'getopt' method :)	
+	// Combination 1: with long option:
+	template <class T> inline T getopt(char short_opt, const std::string& long_opt) throw(GetOptEx)
+	{
+		T result;
+		operator >> (Option(short_opt, long_opt, result));
+		return result;
+	}
+
+	template <class T> inline T getopt(char short_opt, const std::string& long_opt, const T& def_value)
+	{
+		T result;
+		operator >> (Option(short_opt, long_opt, result, def_value));
+		return result;
+	}
+
+	// Combination 2: without long option:
+	template <class T> inline T getopt(char short_opt) throw(GetOptEx)
+	{
+		T result;
+		operator >> (Option(short_opt, result));
+		return result;
+	}
+
+	template <class T> inline T getopt(char short_opt, const T& def_value)
+	{
+		T result;
+		operator >> (Option(short_opt, result, def_value));
+		return result;
+	}
+	
 };
 
 }

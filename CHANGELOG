@@ -1,3 +1,10 @@
+Version 0.8
+===========
+    * Added std::vector<> support. (see example general1)
+    * Added alternative method for retrieving options without manipulators: 'getopt()' method
+    * std::exception is now a public base class of GetOptEx exception.
+
+
 Version 0.7
 ===========
     * Added exception hierarchy, instead of throwing an integer.
