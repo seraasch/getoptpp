@@ -66,7 +66,7 @@ struct _Option
 	virtual ~_Option(){}
 };
 
-template <class T> static inline _Option::Result convert(const std::string& s, T& result)
+template <class T> inline _Option::Result convert(const std::string& s, T& result)
 {
 	std::stringstream ss;
 	ss.clear();
@@ -78,7 +78,7 @@ template <class T> static inline _Option::Result convert(const std::string& s, T
 		return _Option::OK;
 }
 
-template <> static inline _Option::Result convert<std::string>(const std::string& s, std::string& result)
+template <> inline _Option::Result convert<std::string>(const std::string& s, std::string& result)
 {
 	result = s;
 	return _Option::OK;
@@ -156,7 +156,7 @@ public:
 
 };
 
-template <> template <class T> class _OptionT<std::vector<T> > : public _OptionTBase<std::vector<T> >
+template <class T> class _OptionT<std::vector<T> > : public _OptionTBase<std::vector<T> >
 {
 protected:
 	virtual _Option::Result _assign(const OptionArgs& args) const
