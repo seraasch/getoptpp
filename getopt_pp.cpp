@@ -29,6 +29,12 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 	const char* currentOpt = NULL;
 	bool isShort;
 	
+	// reset the flags:
+	{
+		std::stringstream ss;
+		_flags = ss.flags();
+	}
+	
 	// parse arguments by their '-' or '--':
 	for(int i=1; i < argc; i++)
 	{
@@ -84,7 +90,7 @@ GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
 {
 	if (_last != _Option::ParsingError)
 	{
-		_last = opt(_shortOps, _longOps);
+		_last = opt(_shortOps, _longOps, _flags);
 		
 		switch(_last)
 		{
@@ -117,6 +123,14 @@ GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
 	else if (_exc & std::ios_base::failbit )
 		throw ParsingErrorEx();
 		
+	return *this;
+}
+
+GetOpt_pp& GetOpt_pp::operator >> (std::ios_base& (*iomanip)(std::ios_base&))
+{
+	std::stringstream ss;
+	ss.flags(_flags);
+	_flags = (ss << iomanip).flags();
 	return *this;
 }
 

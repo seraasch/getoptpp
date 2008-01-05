@@ -62,14 +62,15 @@ struct _Option
 		TooManyArgs
 	};
 
-	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const = 0;
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const = 0;
 	virtual ~_Option(){}
 };
 
-template <class T> inline _Option::Result convert(const std::string& s, T& result)
+template <class T> inline _Option::Result convert(const std::string& s, T& result, std::ios::fmtflags flags)
 {
 	std::stringstream ss;
 	ss.clear();
+	ss.flags(flags);
 	ss << s;
 	ss >> result;
 	if (ss.fail() || !ss.eof())
@@ -78,7 +79,7 @@ template <class T> inline _Option::Result convert(const std::string& s, T& resul
 		return _Option::OK;
 }
 
-template <> inline _Option::Result convert<std::string>(const std::string& s, std::string& result)
+template <> inline _Option::Result convert<std::string>(const std::string& s, std::string& result, std::ios::fmtflags flags)
 {
 	result = s;
 	return _Option::OK;
@@ -91,7 +92,7 @@ template <class T> class _OptionTBase : public _Option
 	const std::string long_opt;
 protected:
 	T& target;
-	virtual Result _assign(const OptionArgs& args) const = 0;
+	virtual Result _assign(const OptionArgs& args, std::ios::fmtflags flags) const = 0;
 	
 public:
 	_OptionTBase(const _OptionTBase<T>& other)
@@ -102,7 +103,7 @@ public:
 		: short_opt(short_opt), long_opt(long_opt), target(target)
 	{}
 	
-	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const
 	{
 		Result ret = OptionNotFound;
 		ShortOptions::iterator it = short_ops.find(short_opt);
@@ -110,7 +111,7 @@ public:
 		if (it != short_ops.end())
 		{
 			it->second.extracted = true;
-			ret = _assign(it->second.args);
+			ret = _assign(it->second.args, flags);
 		}
 		else if (!long_opt.empty())
 		{
@@ -118,7 +119,7 @@ public:
 			if (it != long_ops.end())
 			{
 				it->second.extracted = true;
-				ret = _assign(it->second.args);
+				ret = _assign(it->second.args, flags);
 			}
 		}
 
@@ -130,7 +131,7 @@ public:
 template <class T> class _OptionT : public _OptionTBase<T>
 {
 protected:
-	virtual _Option::Result _assign(const OptionArgs& args) const
+	virtual _Option::Result _assign(const OptionArgs& args, std::ios::fmtflags flags) const
 	{		
 		switch (args.size())
 		{
@@ -138,7 +139,7 @@ protected:
 				return _Option::NoArgs;
 				
 			case 1:
-				return convert<T>(args[0], this->target);
+				return convert<T>(args[0], this->target, flags);
 
 			default:
 				return _Option::TooManyArgs;
@@ -159,7 +160,7 @@ public:
 template <class T> class _OptionT<std::vector<T> > : public _OptionTBase<std::vector<T> >
 {
 protected:
-	virtual _Option::Result _assign(const OptionArgs& args) const
+	virtual _Option::Result _assign(const OptionArgs& args, std::ios::fmtflags flags) const
 	{
 		if (!args.empty())
 		{
@@ -169,7 +170,7 @@ protected:
 			
 			do
 			{
-				result = convert<T>(*it, temp);
+				result = convert<T>(*it, temp, flags);
 				if (result == _Option::OK)
 					this->target.push_back(temp);
 					
@@ -207,9 +208,9 @@ public:
 		: BaseOption(short_opt, long_opt, target), default_value(default_value)
 	{}
 
-	virtual _Option::Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const
+	virtual _Option::Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const
 	{
-		_Option::Result ret = BaseOption::operator()(short_ops, long_ops);
+		_Option::Result ret = BaseOption::operator()(short_ops, long_ops, flags);
 		
 		if (ret == _Option::OptionNotFound)
 		{
@@ -288,7 +289,7 @@ public:
 	{}
 	
 protected:
-	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const
 	{
 		bool found;
 		ShortOptions::iterator it = short_ops.find(short_opt);
@@ -333,6 +334,7 @@ class GetOpt_pp
 	LongOptions _longOps;
 	std::ios_base::iostate _exc;
 	_Option::Result _last;
+	std::ios::fmtflags _flags;
 
 public:
 	GetOpt_pp(int argc, char* argv[]);
@@ -340,11 +342,16 @@ public:
 	std::ios_base::iostate exceptions ( ) const			{ return _exc; }
 	void exceptions ( std::ios_base::iostate except )	{ _exc = except; }
 	
-	operator bool() const							{ return _last == _Option::OK;	}
+	operator bool() const								{ return _last == _Option::OK;	}
 
 	bool options_remain() const;
 	
+	std::ios::fmtflags flags() const					{ return _flags; }
+	void flags(std::ios::fmtflags flags)				{ _flags = flags; }
+	
 	GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
+	
+	GetOpt_pp& operator >> (std::ios_base& (*iomanip)(std::ios_base&));
 
 	// Alternative to manipulators, for those who don't like them: the 'getopt' method :)	
 	// Combination 1: with long option:

@@ -1,3 +1,8 @@
+Version 1.0
+===========
+    * Added format flags support (i.e. std::hex)
+
+
 Version 0.91
 ============
     * Fixed syntact errors. Now is fully ANSI compliant, and compiles in Visual C++ 2003.

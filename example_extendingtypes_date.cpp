@@ -45,7 +45,7 @@ struct Date
 
 namespace GetOpt
 {
-	template <> _Option::Result convert<Date>(const std::string& s, Date& d)
+	template <> _Option::Result convert<Date>(const std::string& s, Date& d, std::ios::fmtflags)
 	{
 		_Option::Result ret = _Option::BadType;
 		Date tmp;
