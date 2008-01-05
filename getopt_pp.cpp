@@ -25,7 +25,7 @@ namespace GetOpt {
 GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 	: _exc(std::ios_base::goodbit)
 {
-	OptionArgs currentArgs;
+	OptionData currentData;
 	const char* currentOpt = NULL;
 	bool isShort;
 	
@@ -41,11 +41,11 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 			if (currentOpt != NULL)
 			{
 				if (isShort)
-					_shortOps[*currentOpt] = currentArgs;
+					_shortOps[*currentOpt] = currentData;
 				else
-					_longOps[currentOpt] = currentArgs;
+					_longOps[currentOpt] = currentData;
 				
-				currentArgs.clear();
+				currentData.clear();
 				currentOpt = NULL;
 			}
 			
@@ -64,7 +64,7 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 		else
 		{
 			// save value!
-			currentArgs.push_back(argv[i]);
+			currentData.args.push_back(argv[i]);
 		}
 	}
 
@@ -72,9 +72,9 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 	if (currentOpt != NULL)
 	{
 		if (isShort)
-			_shortOps[*currentOpt] = currentArgs;
+			_shortOps[*currentOpt] = currentData;
 		else
-			_longOps[currentOpt] = currentArgs;
+			_longOps[currentOpt] = currentData;
 	}
 	
 	_last = _Option::OK;	// TODO: IMPROVE!!
@@ -118,6 +118,29 @@ GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
 		throw ParsingErrorEx();
 		
 	return *this;
+}
+
+bool GetOpt_pp::options_remain() const
+{
+	bool remain = false;
+	ShortOptions::const_iterator it = _shortOps.begin();
+	while (it != _shortOps.end() && !remain)
+	{
+		remain = (it->second.extracted == false);
+		++it;
+	}
+	
+	if (!remain)
+	{
+		LongOptions::const_iterator it = _longOps.begin();
+		while (it != _longOps.end() && !remain)
+		{
+			remain = (it->second.extracted == false);
+			++it;
+		}
+	}
+	
+	return remain;
 }
 
 }

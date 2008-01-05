@@ -55,15 +55,23 @@ int main(int argc, char* argv[])
 			>> OptionPresent('x', "flag", flag)
 			>> Option('v', "vec", vec_int)
 		;
-
-		std::cout << test1 << "\n" << test2 << "\n" << test3 << "\n" << flag << "\n";
 		
-		for(std::vector<int>::const_iterator it = vec_int.begin(); it != vec_int.end(); ++it)
-			std::cout << *it << " ";
+		if (!ops.options_remain())
+		{
+			std::cout << test1 << "\n" << test2 << "\n" << test3 << "\n" << flag << "\n";
 			
-		std::cout << std::endl;
+			for(std::vector<int>::const_iterator it = vec_int.begin(); it != vec_int.end(); ++it)
+				std::cout << *it << " ";
+				
+			std::cout << std::endl;
 
-		return 0;
+			return 0;
+		}
+		else
+		{
+			std::cerr << "too many options" << std::endl;
+			return 1;
+		}
 	}
 	catch(const GetOptEx& e)
 	{

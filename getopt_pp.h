@@ -37,8 +37,17 @@ GetOpt_pp:	Yet another C++ version of getopt.
 namespace GetOpt {
 
 typedef std::vector<std::string> OptionArgs;
-typedef std::map<std::string, OptionArgs> LongOptions;
-typedef std::map<char, OptionArgs> ShortOptions;
+
+struct OptionData
+{
+	bool extracted;
+	OptionArgs args;
+	OptionData() : extracted(false) {}
+	void clear() { extracted = false; args.clear(); }
+};
+
+typedef std::map<std::string, OptionData> LongOptions;
+typedef std::map<char, OptionData> ShortOptions;
 
 
 struct _Option
@@ -53,7 +62,7 @@ struct _Option
 		TooManyArgs
 	};
 
-	virtual Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const = 0;
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const = 0;
 	virtual ~_Option(){}
 };
 
@@ -63,10 +72,10 @@ template <class T> static inline _Option::Result convert(const std::string& s, T
 	ss.clear();
 	ss << s;
 	ss >> result;
-	//if (ss.str().empty())
-	return ss.fail() ? _Option::BadType : _Option::OK;
-	//else
-	//	return BadType;
+	if (ss.fail() || !ss.eof())
+		return _Option::BadType;
+	else
+		return _Option::OK;
 }
 
 template <> static inline _Option::Result convert<std::string>(const std::string& s, std::string& result)
@@ -93,18 +102,24 @@ public:
 		: short_opt(short_opt), long_opt(long_opt), target(target)
 	{}
 	
-	virtual Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const
 	{
 		Result ret = OptionNotFound;
-		ShortOptions::const_iterator it = short_ops.find(short_opt);
+		ShortOptions::iterator it = short_ops.find(short_opt);
 		
 		if (it != short_ops.end())
-			ret = _assign(it->second);
+		{
+			it->second.extracted = true;
+			ret = _assign(it->second.args);
+		}
 		else if (!long_opt.empty())
 		{
-			LongOptions::const_iterator it = long_ops.find(long_opt);
+			LongOptions::iterator it = long_ops.find(long_opt);
 			if (it != long_ops.end())
-				ret = _assign(it->second);
+			{
+				it->second.extracted = true;
+				ret = _assign(it->second.args);
+			}
 		}
 
 		return ret;
@@ -139,35 +154,6 @@ public:
 		: _OptionTBase<T>(short_opt, long_opt, target)
 	{}
 
-};
-
-template <> class _OptionT<std::string> : public _OptionTBase<std::string>
-{
-protected:
-	virtual _Option::Result _assign(const OptionArgs& args) const
-	{
-		switch(args.size())
-		{
-			case 0:
-				return _Option::NoArgs;
-				
-			case 1:
-				target = args[0];
-				return _Option::OK;
-				
-			default:
-				return _Option::TooManyArgs;
-		}
-	}
-	
-public:	
-	_OptionT(const _OptionT<std::string>& other)
-		: _OptionTBase<std::string>(other)
-	{}
-
-	_OptionT(char short_opt, const std::string& long_opt, std::string& target)
-		: _OptionTBase<std::string>(short_opt, long_opt, target)
-	{}
 };
 
 template <> template <class T> class _OptionT<std::vector<T> > : public _OptionTBase<std::vector<T> >
@@ -221,7 +207,7 @@ public:
 		: BaseOption(short_opt, long_opt, target), default_value(default_value)
 	{}
 
-	virtual _Option::Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const
+	virtual _Option::Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const
 	{
 		_Option::Result ret = BaseOption::operator()(short_ops, long_ops);
 		
@@ -302,15 +288,24 @@ public:
 	{}
 	
 protected:
-	virtual Result operator() (const ShortOptions& short_ops, const LongOptions& long_ops) const
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops) const
 	{
 		bool found;
-		ShortOptions::const_iterator it = short_ops.find(short_opt);
+		ShortOptions::iterator it = short_ops.find(short_opt);
 		
 		found = (it != short_ops.end());
-		if (!found && !long_opt.empty())
+		if (found)
 		{
-			found = (long_ops.find(long_opt) != long_ops.end());
+			it->second.extracted = true;
+		}
+		else if (!long_opt.empty())
+		{
+			LongOptions::iterator it = long_ops.find(long_opt);
+			found = (it != long_ops.end());
+			if (found)
+			{
+				it->second.extracted = true;
+			}
 		}
 		
 		if (present != NULL)
@@ -346,6 +341,8 @@ public:
 	void exceptions ( std::ios_base::iostate except )	{ _exc = except; }
 	
 	operator bool() const							{ return _last == _Option::OK;	}
+
+	bool options_remain() const;
 	
 	GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
 
