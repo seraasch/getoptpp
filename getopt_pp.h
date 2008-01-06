@@ -1,6 +1,6 @@
 /*
 GetOpt_pp:	Yet another C++ version of getopt.
-    Copyright (C) 2007  Daniel Gutson, FuDePAN
+    Copyright (C) 2007-2008  Daniel Gutson, FuDePAN
 
     This file is part of GetOpt_pp.
     
@@ -44,10 +44,17 @@ typedef std::vector<std::string> OptionArgs;
 
 struct OptionData
 {
-	bool extracted;
+	enum _Flags
+	{
+		CmdLine_NotExtracted,
+		CmdLine_Extracted,
+		Envir
+	};
+	
+	_Flags flags;
 	OptionArgs args;
-	OptionData() : extracted(false) {}
-	void clear() { extracted = false; args.clear(); }
+	OptionData() : flags(CmdLine_NotExtracted) {}
+	void clear() { flags = CmdLine_NotExtracted; args.clear(); }
 };
 
 typedef std::map<std::string, OptionData> LongOptions;
@@ -114,7 +121,7 @@ public:
 		
 		if (it != short_ops.end())
 		{
-			it->second.extracted = true;
+			it->second.flags = OptionData::CmdLine_Extracted;
 			ret = _assign(it->second.args, flags);
 		}
 		else if (!long_opt.empty())
@@ -122,7 +129,7 @@ public:
 			LongOptions::iterator it = long_ops.find(long_opt);
 			if (it != long_ops.end())
 			{
-				it->second.extracted = true;
+				it->second.flags = OptionData::CmdLine_Extracted;
 				ret = _assign(it->second.args, flags);
 			}
 		}
@@ -301,7 +308,7 @@ protected:
 		found = (it != short_ops.end());
 		if (found)
 		{
-			it->second.extracted = true;
+			it->second.flags = OptionData::CmdLine_Extracted;
 		}
 		else if (!long_opt.empty())
 		{
@@ -309,7 +316,7 @@ protected:
 			found = (it != long_ops.end());
 			if (found)
 			{
-				it->second.extracted = true;
+				it->second.flags = OptionData::CmdLine_Extracted;
 			}
 		}
 		
@@ -332,6 +339,11 @@ struct ArgumentNotFoundEx : GetOptEx{};
 struct TooManyArgumentsEx : GetOptEx{};
 struct OptionNotFoundEx : GetOptEx{};
 
+enum _EnvTag
+{
+	Include_Environment
+};
+
 class GetOpt_pp
 {
 	ShortOptions _shortOps;
@@ -339,11 +351,16 @@ class GetOpt_pp
 	std::ios_base::iostate _exc;
 	_Option::Result _last;
 	std::ios::fmtflags _flags;
-	std::string _app_name;	
+	std::string _app_name;
+
+	GETOPT_INLINE void _init_flags();
+	GETOPT_INLINE void _parse(int argc, char* argv[]);
+	GETOPT_INLINE void _parse_env();
 public:
 	static const char EMPTY_OPTION = 0;
 	
 	GETOPT_INLINE GetOpt_pp(int argc, char* argv[]);
+	GETOPT_INLINE GetOpt_pp(int argc, char* argv[], _EnvTag);
 	
 	std::ios_base::iostate exceptions ( ) const			{ return _exc; }
 	void exceptions ( std::ios_base::iostate except )	{ _exc = except; }
@@ -391,7 +408,67 @@ public:
 		operator >> (Option(short_opt, result, def_value));
 		return result;
 	}
+
+	typedef std::pair<ShortOptions::const_iterator, LongOptions::const_iterator> ItPair;
 	
+	template <class Container, class Adapter, class OptionType>
+	class _iterator
+	{
+		typename Container::const_iterator _it;
+	public:
+		_iterator(ItPair p)
+		{
+			_it = Adapter::adapt(p);
+		}
+		
+		_iterator(){}
+		
+		_iterator<Container, Adapter, OptionType>& operator = (const _iterator<Container, Adapter, OptionType>& other)
+		{
+			_it = other._it;
+			return *this;
+		}
+		
+		bool operator != (const _iterator<Container, Adapter, OptionType>& other) const	{	return _it != other._it;	}
+		
+		OptionType option() const			{	return _it->first;				}
+		const OptionArgs&  args() const		{	return _it->second.args;		}
+		_iterator<Container, Adapter, OptionType>& operator ++()	{	++_it; return *this;	}
+	};
+	
+	ItPair begin() const
+	{
+		return ItPair(_shortOps.begin(), _longOps.begin() );
+	}
+	
+	ItPair end() const
+	{
+		return ItPair(_shortOps.end(), _longOps.end());
+	}
+	
+	struct ShortAdapter
+	{
+		static ShortOptions::const_iterator adapt(ItPair p)
+		{
+			return p.first;
+		}
+	};
+	
+	struct LongAdapter
+	{
+		static LongOptions::const_iterator adapt(ItPair p)
+		{
+			return p.second;
+		}
+	};
+	
+	typedef _iterator<ShortOptions, ShortAdapter, char> short_iterator;
+	typedef _iterator<LongOptions, LongAdapter, const std::string&> long_iterator;
+};
+
+class Environment
+{
+	// Coming soon!
 };
 
 }
