@@ -357,7 +357,7 @@ class GetOpt_pp
 	GETOPT_INLINE void _parse(int argc, char* argv[]);
 	GETOPT_INLINE void _parse_env();
 public:
-	static const char EMPTY_OPTION = 0;
+	static const char EMPTY_OPTION;
 	
 	GETOPT_INLINE GetOpt_pp(int argc, char* argv[]);
 	GETOPT_INLINE GetOpt_pp(int argc, char* argv[], _EnvTag);

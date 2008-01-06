@@ -22,7 +22,7 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
 namespace GetOpt {
 
-const char GetOpt_pp::EMPTY_OPTION;
+const char GetOpt_pp::EMPTY_OPTION = 0;
 
 GETOPT_INLINE void GetOpt_pp::_init_flags()
 {
