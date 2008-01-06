@@ -22,12 +22,12 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
 namespace GetOpt {
 
-GetOpt_pp::GetOpt_pp(int argc, char* argv[])
+const char GetOpt_pp::EMPTY_OPTION;
+
+GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 	: _exc(std::ios_base::goodbit)
 {
-	OptionData currentData;
-	const char* currentOpt = NULL;
-	bool isShort;
+	OptionData* currentData = NULL;
 	
 	// reset the flags:
 	{
@@ -35,58 +35,51 @@ GetOpt_pp::GetOpt_pp(int argc, char* argv[])
 		_flags = ss.flags();
 	}
 	
+	_app_name = argv[0];
+	
 	// parse arguments by their '-' or '--':
+	//   (this will be a state machine soon)
 	for(int i=1; i < argc; i++)
 	{
 		const char current = argv[i][0];
 		const char next = argv[i][1];
 		
 		if (current == '-' && (isalpha(next) || next == '-' ) )
-		{
-			// save previous option, if any
-			if (currentOpt != NULL)
-			{
-				if (isShort)
-					_shortOps[*currentOpt] = currentData;
-				else
-					_longOps[currentOpt] = currentData;
-				
-				currentData.clear();
-				currentOpt = NULL;
-			}
-			
-			// now see what's next, differentiate whether it's short or long:
+		{			
+			// see what's next, differentiate whether it's short or long:
 			if (next == '-' && argv[i][2] != 0)
 			{
-				currentOpt = &argv[i][2];
-				isShort = false;
+				// long option
+				currentData = &_longOps[&argv[i][2]];
 			}
 			else
 			{
-				currentOpt = &argv[i][1];
-				isShort = true;
+				// short option
+				// iterate over all of them, keeping the last one in currentData
+				// (so the intermediates will generate 'existent' arguments, as of '-abc')
+				size_t j=1;
+				do
+				{
+					currentData = &_shortOps[argv[i][j]];
+					j++;
+				}
+				while (argv[i][j] != 0);
 			}
 		}
 		else
 		{
 			// save value!
-			currentData.args.push_back(argv[i]);
+			if (currentData == NULL)
+				currentData = &_shortOps[EMPTY_OPTION];
+				
+			currentData->args.push_back(argv[i]);
 		}
-	}
-
-	// save the last one:
-	if (currentOpt != NULL)
-	{
-		if (isShort)
-			_shortOps[*currentOpt] = currentData;
-		else
-			_longOps[currentOpt] = currentData;
 	}
 	
 	_last = _Option::OK;	// TODO: IMPROVE!!
 }
 
-GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
+GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
 {
 	if (_last != _Option::ParsingError)
 	{
@@ -126,7 +119,7 @@ GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
 	return *this;
 }
 
-GetOpt_pp& GetOpt_pp::operator >> (std::ios_base& (*iomanip)(std::ios_base&))
+GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (std::ios_base& (*iomanip)(std::ios_base&))
 {
 	std::stringstream ss;
 	ss.flags(_flags);
@@ -134,7 +127,7 @@ GetOpt_pp& GetOpt_pp::operator >> (std::ios_base& (*iomanip)(std::ios_base&))
 	return *this;
 }
 
-bool GetOpt_pp::options_remain() const
+GETOPT_INLINE bool GetOpt_pp::options_remain() const
 {
 	bool remain = false;
 	ShortOptions::const_iterator it = _shortOps.begin();

@@ -34,6 +34,10 @@ GetOpt_pp:	Yet another C++ version of getopt.
 		- EASY to extend
 */
 
+#ifndef GETOPT_INLINE
+#	define GETOPT_INLINE
+#endif
+
 namespace GetOpt {
 
 typedef std::vector<std::string> OptionArgs;
@@ -335,23 +339,27 @@ class GetOpt_pp
 	std::ios_base::iostate _exc;
 	_Option::Result _last;
 	std::ios::fmtflags _flags;
-
+	std::string _app_name;	
 public:
-	GetOpt_pp(int argc, char* argv[]);
+	static const char EMPTY_OPTION = 0;
+	
+	GETOPT_INLINE GetOpt_pp(int argc, char* argv[]);
 	
 	std::ios_base::iostate exceptions ( ) const			{ return _exc; }
 	void exceptions ( std::ios_base::iostate except )	{ _exc = except; }
 	
 	operator bool() const								{ return _last == _Option::OK;	}
 
-	bool options_remain() const;
+	GETOPT_INLINE bool options_remain() const;
 	
 	std::ios::fmtflags flags() const					{ return _flags; }
 	void flags(std::ios::fmtflags flags)				{ _flags = flags; }
 	
-	GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
+	const std::string& app_name() const					{ return _app_name; }
 	
-	GetOpt_pp& operator >> (std::ios_base& (*iomanip)(std::ios_base&));
+	GETOPT_INLINE GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
+	
+	GETOPT_INLINE GetOpt_pp& operator >> (std::ios_base& (*iomanip)(std::ios_base&));
 
 	// Alternative to manipulators, for those who don't like them: the 'getopt' method :)	
 	// Combination 1: with long option:

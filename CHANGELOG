@@ -1,3 +1,11 @@
+Version 1.01
+============
+    * Optimized parser.
+    * Added EMPTY_OPTION support [Issue #6]
+    * Added multiple short options in a single entry support [Issue #9]
+    * Added 'standalone' header (getopt_pp_standalone.h)
+
+
 Version 1.0
 ===========
     * Added format flags support (i.e. std::hex)
