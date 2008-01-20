@@ -70,7 +70,8 @@ struct _Option
 		OptionNotFound,
 		BadType,
 		NoArgs,
-		TooManyArgs
+		TooManyArgs,
+		OptionNotFound_NoEx
 	};
 
 	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const = 0;
@@ -327,7 +328,7 @@ protected:
 		}
 		else
 		{
-			return found ? OK : OptionNotFound;
+			return found ? OK : OptionNotFound_NoEx;
 		}
 	}
 };
@@ -338,6 +339,7 @@ struct InvalidFormatEx : GetOptEx{};
 struct ArgumentNotFoundEx : GetOptEx{};
 struct TooManyArgumentsEx : GetOptEx{};
 struct OptionNotFoundEx : GetOptEx{};
+struct TooManyOptionsEx : GetOptEx{};
 
 enum _EnvTag
 {
@@ -364,10 +366,17 @@ public:
 	
 	std::ios_base::iostate exceptions ( ) const			{ return _exc; }
 	void exceptions ( std::ios_base::iostate except )	{ _exc = except; }
+	void exceptions_all()                               { _exc = std::ios_base::failbit | std::ios_base::eofbit; }
 	
 	operator bool() const								{ return _last == _Option::OK;	}
 
 	GETOPT_INLINE bool options_remain() const;
+	
+	void end_of_options() const throw(GetOptEx)
+	{
+    	if (options_remain() && (_exc & std::ios_base::eofbit))
+    	    throw TooManyOptionsEx();
+    }
 	
 	std::ios::fmtflags flags() const					{ return _flags; }
 	void flags(std::ios::fmtflags flags)				{ _flags = flags; }

@@ -154,7 +154,10 @@ GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetO
 				if (_exc & std::ios_base::failbit )
 					throw TooManyArgumentsEx();
 				break;
-				
+			
+			case _Option::OptionNotFound_NoEx:
+			    break;  // Ok, it will be read by casting to bool
+			    
 			case _Option::ParsingError: break;	// just to disable warning
 		}
 	}

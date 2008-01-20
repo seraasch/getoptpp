@@ -1,3 +1,10 @@
+Version 2.1
+===========
+    * Added 'end_of_options' method, and added `TooManyOptionsEx' exception. Refer to documentation.
+    * Added method 'exceptions_all()'.
+    * Fixed behavior bug in OptionPresent when exceptions were activated.
+
+
 Version 2.01
 ============
     * Fixed syntax so it compiles in VStudio 2003
