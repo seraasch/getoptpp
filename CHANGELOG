@@ -1,3 +1,8 @@
+Version 2.11
+============
+    * Added include of 'unistd.h' for old glibc headers (thanks grunertj)
+
+
 Version 2.1
 ===========
     * Added 'end_of_options' method, and added `TooManyOptionsEx' exception. Refer to documentation.
