@@ -1,3 +1,8 @@
+Version 2.13
+============
+    * fix for Mac OS X
+
+
 Version 2.12
 ============
     * changed license from Affero to GPL3 (Non-affero). This was always the intention.
