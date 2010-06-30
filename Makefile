@@ -13,12 +13,12 @@ INSTALL_DIR=/usr/lib
 DEV_INSTALL_DIR=/usr/include
 
 ifeq ($(SHARED),n)
-library: libgetopt_pp.a clean
+library: clean libgetopt_pp.a
 $(EXAMPLE_BIN): libgetopt_pp.a
 install: libgetopt_pp.a 
 else
 CPPFLAGS:=$(CPPFLAGS) -fPIC
-library: libgetopt_pp.so clean
+library: clean libgetopt_pp.so
 $(EXAMPLE_BIN): libgetopt_pp.so
 install: libgetopt_pp.so 
 endif
