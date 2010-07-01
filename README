@@ -22,11 +22,8 @@ $> make SHARED=n
 2.2 - For compiling the examples:
 $> make SHARED=n examples
 
-2.3 - For installing the library (needs root priviledges)
+2.3 - For installing the (static) library (needs root priviledges)
 $> make SHARED=n install
-
-3) Installing all the development environment
-$> make install_dev
 
 Send comments to daniel.gutson@gmail.com
 

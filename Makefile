@@ -9,18 +9,20 @@ EXAMPLES_SRCS=$(wildcard example_*.cpp)
 EXAMPLES_OBJS=$(patsubst %.cpp,%.o,$(EXAMPLES_SRCS))
 EXAMPLE_BIN=$(patsubst %.cpp,%,$(EXAMPLES_SRCS))
 
-INSTALL_DIR=/usr/lib
-DEV_INSTALL_DIR=/usr/include
+_PREFIX=$(if $(PREFIX),$(PREFIX),/usr)
+INSTALL_DIR=$(_PREFIX)/lib
+DEV_INSTALL_DIR=$(_PREFIX)/include
+
 
 ifeq ($(SHARED),n)
-library: clean libgetopt_pp.a
+library: libgetopt_pp.a
 $(EXAMPLE_BIN): libgetopt_pp.a
-install: libgetopt_pp.a 
+install_lib: libgetopt_pp.a 
 else
 CPPFLAGS:=$(CPPFLAGS) -fPIC
-library: clean libgetopt_pp.so
+library: libgetopt_pp.so
 $(EXAMPLE_BIN): libgetopt_pp.so
-install: libgetopt_pp.so 
+install_lib: libgetopt_pp.so 
 endif
 
 libgetopt_pp.a: $(OBJECTS)
@@ -40,11 +42,11 @@ $(EXAMPLE_BIN):
 clean:
 	@rm -rf $(OBJECTS) libgetopt_pp.so libgetopt_pp.a $(EXAMPLE_BIN) *.o
 
-install: 
+install_lib: 
 	cp -f $^ $(INSTALL_DIR)
 	ldconfig 
 
 install_headers: getopt_pp.h 
 	cp -f $^ $(DEV_INSTALL_DIR)
 
-install_dev: install install_headers
+install: install_lib install_headers
