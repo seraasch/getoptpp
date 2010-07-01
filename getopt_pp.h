@@ -108,7 +108,7 @@ protected:
 	
 public:
 	_OptionTBase(const _OptionTBase<T>& other)
-		: short_opt(other.short_opt), long_opt(other.long_opt), target(other.target)
+		: _Option(), short_opt(other.short_opt), long_opt(other.long_opt), target(other.target)
 	{}
 	
 	_OptionTBase(char short_opt, const std::string& long_opt, T& target)
