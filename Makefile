@@ -44,7 +44,9 @@ clean:
 
 install_lib: 
 	cp -f $^ $(INSTALL_DIR)
-	ldconfig 
+ifneq ($(SHARED),n)
+	ldconfig
+endif 
 
 install_headers: getopt_pp.h 
 	cp -f $^ $(DEV_INSTALL_DIR)

@@ -22,7 +22,7 @@ $> make SHARED=n
 2.2 - For compiling the examples:
 $> make SHARED=n examples
 
-2.3 - For installing the (static) library (needs root priviledges)
+2.3 - For installing the (static) library (if PREFIX is used, no root privs are needed)
 $> make SHARED=n install
 
 Send comments to daniel.gutson@gmail.com
