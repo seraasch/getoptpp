@@ -1,6 +1,6 @@
 /*
 GetOpt_pp:	Yet another C++ version of getopt.
-    Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
+    Copyright (C) 2007, 2008, 2009, 2010  Daniel Gutson, FuDePAN
     
     This file is part of GetOpt_pp.
 
@@ -31,7 +31,16 @@ extern char** environ;
 
 namespace GetOpt {
 
-const char GetOpt_pp::EMPTY_OPTION = 0;
+GETOPT_INLINE Token* GetOpt_pp::_add_token(const std::string& value, Token::Type type)
+{
+    Token* const ret = new Token(value, type);
+    if (_first_token == NULL)
+        _first_token = ret;
+    else
+        _last_token->link_to(ret);
+    _last_token = ret;
+    return ret;
+}
 
 GETOPT_INLINE void GetOpt_pp::_init_flags()
 {
@@ -41,8 +50,8 @@ GETOPT_INLINE void GetOpt_pp::_init_flags()
 
 GETOPT_INLINE void GetOpt_pp::_parse(int argc, char* argv[])
 {
-	OptionData* currentData = NULL;
 	_app_name = argv[0];
+    bool any_option_processed = false;
 
 	// parse arguments by their '-' or '--':
 	//   (this will be a state machine soon)
@@ -57,7 +66,8 @@ GETOPT_INLINE void GetOpt_pp::_parse(int argc, char* argv[])
 			if (next == '-' && argv[i][2] != 0)
 			{
 				// long option
-				currentData = &_longOps[&argv[i][2]];
+                _longOps[&argv[i][2]].token = _add_token(&argv[i][2], Token::LongOption);
+                any_option_processed = true;
 			}
 			else
 			{
@@ -67,19 +77,17 @@ GETOPT_INLINE void GetOpt_pp::_parse(int argc, char* argv[])
 				size_t j=1;
 				do
 				{
-					currentData = &_shortOps[argv[i][j]];
+					_shortOps[argv[i][j]].token = _add_token(std::string(&argv[i][j], 1), Token::ShortOption);
 					j++;
 				}
 				while (argv[i][j] != 0);
+
+                any_option_processed = true;
 			}
 		}
 		else
 		{
-			// save value!
-			if (currentData == NULL)
-				currentData = &_shortOps[EMPTY_OPTION];
-				
-			currentData->args.push_back(argv[i]);
+            _add_token(argv[i], any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
 		}
 	}
 	
@@ -108,8 +116,9 @@ GETOPT_INLINE void GetOpt_pp::_parse_env()
 			if (_longOps.find(var_name) == _longOps.end())
 			{
 				data = &_longOps[var_name];
-				data->args.push_back(var_value);
+                data->token = _add_token(var_name, Token::LongOption);
 				data->flags = OptionData::Envir;
+                _add_token(var_value, Token::OptionArgument);
 			}
 		}
 		else
@@ -120,24 +129,37 @@ GETOPT_INLINE void GetOpt_pp::_parse_env()
 }
 
 GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, char* argv[])
-	: _exc(std::ios_base::goodbit)
+	: _exc(std::ios_base::goodbit), _first_token(NULL), _last_token(NULL)
 {
 	_init_flags();
 	_parse(argc, argv);	
 }
 
 GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, char* argv[], _EnvTag)
+    : _first_token(NULL), _last_token(NULL)
 {
 	_init_flags();
 	_parse(argc, argv);	
 	_parse_env();
 }
 
+GETOPT_INLINE GetOpt_pp::~GetOpt_pp()
+{
+    Token* next;
+    Token* current (_first_token);
+    while (current != NULL)
+    {
+        next = current->next;
+        delete current;
+        current = next;
+    }
+}
+
 GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw (GetOptEx)
 {
 	if (_last != _Option::ParsingError)
 	{
-		_last = opt(_shortOps, _longOps, _flags);
+		_last = opt(_shortOps, _longOps, _first_token, _flags);
 		
 		switch(_last)
 		{

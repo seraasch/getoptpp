@@ -1,6 +1,6 @@
 /*
 GetOpt_pp:	Yet another C++ version of getopt.
-    Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
+    Copyright (C) 2007, 2008, 2009, 2010  Daniel Gutson, FuDePAN
     
     This file is part of GetOpt_pp.
 
@@ -22,9 +22,10 @@ GetOpt_pp:	Yet another C++ version of getopt.
 #define GETOPT_PP_H
 
 #include <string>
-#include <vector>
+#include <vector>   // candidate to be removed
 #include <map>
 #include <sstream>
+#include <list>
 
 /*
 	DESIGN GOALS:
@@ -40,7 +41,49 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
 namespace GetOpt {
 
-typedef std::vector<std::string> OptionArgs;
+struct Token
+{
+    enum Type
+    {
+        ShortOption,
+        LongOption,
+        GlobalArgument,
+        GlobalArgumentUsed, // already read, skip in the next read
+        OptionArgument,
+        UnknownYet  // can be a global option, or an option of the previous one
+    };
+
+    Type type;
+    std::string value;
+    Token* next;
+
+    Token(const std::string& value, Type type = UnknownYet)
+    : type(type), value(value), next(NULL)
+    {}
+
+    bool is_last() const
+    {
+        return next == NULL;
+    }
+
+    void link_to(Token* new_next)
+    {
+        next = new_next;
+    }
+
+    Token* get_next_option_argument() const
+    {
+        if (is_last())
+            return NULL;
+        else
+        {
+            if (next->type == UnknownYet || next->type == OptionArgument)
+                return next;
+            else
+                return NULL;
+        }
+    }
+};
 
 struct OptionData
 {
@@ -52,9 +95,8 @@ struct OptionData
 	};
 	
 	_Flags flags;
-	OptionArgs args;
+    Token* token;
 	OptionData() : flags(CmdLine_NotExtracted) {}
-	void clear() { flags = CmdLine_NotExtracted; args.clear(); }
 };
 
 typedef std::map<std::string, OptionData> LongOptions;
@@ -74,7 +116,7 @@ struct _Option
 		OptionNotFound_NoEx
 	};
 
-	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const = 0;
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const = 0;
 	virtual ~_Option(){}
 };
 
@@ -104,7 +146,7 @@ template <class T> class _OptionTBase : public _Option
 	const std::string long_opt;
 protected:
 	T& target;
-	virtual Result _assign(const OptionArgs& args, std::ios::fmtflags flags) const = 0;
+	virtual Result _assign(Token* token, std::ios::fmtflags flags) const = 0;
 	
 public:
 	_OptionTBase(const _OptionTBase<T>& other)
@@ -115,7 +157,7 @@ public:
 		: short_opt(short_opt), long_opt(long_opt), target(target)
 	{}
 	
-	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
 	{
 		Result ret = OptionNotFound;
 		ShortOptions::iterator it = short_ops.find(short_opt);
@@ -123,7 +165,7 @@ public:
 		if (it != short_ops.end())
 		{
 			it->second.flags = OptionData::CmdLine_Extracted;
-			ret = _assign(it->second.args, flags);
+			ret = _assign(it->second.token, flags);
 		}
 		else if (!long_opt.empty())
 		{
@@ -131,7 +173,7 @@ public:
 			if (it != long_ops.end())
 			{
 				it->second.flags = OptionData::CmdLine_Extracted;
-				ret = _assign(it->second.args, flags);
+				ret = _assign(it->second.token, flags);
 			}
 		}
 
@@ -143,20 +185,16 @@ public:
 template <class T> class _OptionT : public _OptionTBase<T>
 {
 protected:
-	virtual _Option::Result _assign(const OptionArgs& args, std::ios::fmtflags flags) const
-	{		
-		switch (args.size())
-		{
-			case 0:
-				return _Option::NoArgs;
-				
-			case 1:
-				return convert<T>(args[0], this->target, flags);
-
-			default:
-				return _Option::TooManyArgs;
-		}
-			
+	virtual _Option::Result _assign(Token* token, std::ios::fmtflags flags) const
+	{
+        Token* const option_token = token->get_next_option_argument();
+        if (option_token == NULL)
+            return _Option::NoArgs;
+        else
+        {
+            option_token->type = Token::OptionArgument;
+            return convert<T>(token->value, this->target, flags);
+        }
 	}
 public:	
 	_OptionT(const _OptionT<T>& other)
@@ -172,22 +210,24 @@ public:
 template <class T> class _OptionT<std::vector<T> > : public _OptionTBase<std::vector<T> >
 {
 protected:
-	virtual _Option::Result _assign(const OptionArgs& args, std::ios::fmtflags flags) const
+	virtual _Option::Result _assign(Token* token, std::ios::fmtflags flags) const
 	{
-		if (!args.empty())
+        Token* option_token = token->get_next_option_argument();
+		if (option_token != NULL)
 		{
 			_Option::Result result;
-			OptionArgs::const_iterator it = args.begin();
+			//OptionArgs::const_iterator it = args.begin();
 			T temp;
 			
 			do
 			{
-				result = convert<T>(*it, temp, flags);
+				result = convert<T>(option_token->value, temp, flags);
 				if (result == _Option::OK)
 					this->target.push_back(temp);
 					
-				++it;
-			} while(it != args.end() && result == _Option::OK);
+				option_token = option_token->get_next_option_argument();
+			}
+            while(option_token != NULL && result == _Option::OK);
 			
 			return result;
 		}
@@ -220,9 +260,9 @@ public:
 		: BaseOption(short_opt, long_opt, target), default_value(default_value)
 	{}
 
-	virtual _Option::Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const
+	virtual _Option::Result operator() (ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
 	{
-		_Option::Result ret = BaseOption::operator()(short_ops, long_ops, flags);
+		_Option::Result ret = BaseOption::operator()(short_ops, long_ops, first, flags);
 		
 		if (ret == _Option::OptionNotFound)
 		{
@@ -234,6 +274,84 @@ public:
 	}
 };
 
+template <class T>
+class _GlobalOption : public _Option
+{
+    T& target;
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
+    {
+        // find first token GlobalArgument or UnknownYet (candidate)
+        Token* token (first);
+        bool found (false);
+        while (token != NULL && !found)
+        {
+            found = (token->type == Token::GlobalArgument || token->type == Token::UnknownYet);
+            if (!found)
+                token = token->next;
+        }
+        if (found)
+        {
+            token->type = Token::GlobalArgumentUsed;
+            return convert<T>(token->value, target, flags);
+        }
+        else
+            return OptionNotFound;
+    }
+public:
+    _GlobalOption(const _GlobalOption<T>& other)
+        : target(other.target)
+    {}
+
+    _GlobalOption(T& target)
+        : target(target)
+    {}
+};
+
+template <class T>
+class _GlobalOption<std::vector<T> > : public _Option
+{
+    std::vector<T>& target;
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
+    {
+        // find first token GlobalArgument or UnknownYet (candidate)
+        Token* token (first);
+        bool found_any (false);
+        T tmp;
+        Result res(OK);
+
+        while (token != NULL && res == OK)
+        {
+            if (token->type == Token::GlobalArgument || token->type == Token::UnknownYet)
+            {
+                res = convert<T>(token->value, tmp, flags);
+                if (res == OK)
+                {
+                    found_any = true;
+                    target.push_back(tmp);
+                    token->type = Token::GlobalArgumentUsed;
+                }
+            }
+            token = token->next;
+        }
+        if (res == OK)
+        {
+            if (found_any)
+                return res;
+            else
+                return OptionNotFound;
+        }
+        else
+            return res;
+    }
+public:
+    _GlobalOption(const _GlobalOption<std::vector<T> >& other)
+        : target(other.target)
+    {}
+
+    _GlobalOption(std::vector<T>& target)
+        : target(target)
+    {}
+};
 
 template <class T>
 inline _OptionT<T> Option(char short_opt, const std::string& long_opt, T& target)
@@ -273,6 +391,12 @@ inline _OptionT<std::string> Option(char short_opt, std::string& target, const c
 	return _DefValOption<std::string, _OptionT<std::string> >(short_opt, std::string(), target, def);
 }
 
+// Global Option:
+template <class T>
+inline _GlobalOption<T> GlobalOption(T& target)
+{
+    return _GlobalOption<T>(target);
+}
 
 class OptionPresent : public _Option
 {
@@ -301,7 +425,7 @@ public:
 	{}
 	
 protected:
-	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, std::ios::fmtflags flags) const
+	virtual Result operator() (ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
 	{
 		bool found;
 		ShortOptions::iterator it = short_ops.find(short_opt);
@@ -354,15 +478,17 @@ class GetOpt_pp
 	_Option::Result _last;
 	std::ios::fmtflags _flags;
 	std::string _app_name;
+    Token* _first_token;
+    Token* _last_token;
 
+    GETOPT_INLINE Token* _add_token(const std::string& value, Token::Type type);
 	GETOPT_INLINE void _init_flags();
 	GETOPT_INLINE void _parse(int argc, char* argv[]);
 	GETOPT_INLINE void _parse_env();
 public:
-	static const char EMPTY_OPTION;
-	
 	GETOPT_INLINE GetOpt_pp(int argc, char* argv[]);
 	GETOPT_INLINE GetOpt_pp(int argc, char* argv[], _EnvTag);
+    GETOPT_INLINE ~GetOpt_pp();
 	
 	std::ios_base::iostate exceptions ( ) const			{ return _exc; }
 	void exceptions ( std::ios_base::iostate except )	{ _exc = except; }
@@ -418,57 +544,94 @@ public:
 		return result;
 	}
 
-	typedef std::pair<ShortOptions::const_iterator, LongOptions::const_iterator> ItPair;
+    struct ItCtorData
+    {
+        ShortOptions::const_iterator short_iter;
+        LongOptions::const_iterator  long_iter;
+        GetOpt_pp* getopt_pp;
+    };
 	
 	template <class Container, class Adapter, class OptionType>
 	class _iterator
 	{
 		typename Container::const_iterator _it;
+        GetOpt_pp* _getopt_pp;
 	public:
-		_iterator(ItPair p)
+		_iterator(const ItCtorData& ctor_data)
 		{
-			_it = Adapter::adapt(p);
+			_it = Adapter::adapt(ctor_data);
+            _getopt_pp = ctor_data.getopt_pp;
 		}
 		
-		_iterator(){}
+		_iterator() : _getopt_pp(NULL)
+        {}
 		
 		_iterator<Container, Adapter, OptionType>& operator = (const _iterator<Container, Adapter, OptionType>& other)
 		{
 			_it = other._it;
+            _getopt_pp = other._getopt_pp;
 			return *this;
 		}
 		
 		bool operator != (const _iterator<Container, Adapter, OptionType>& other) const	{	return _it != other._it;	}
 		
 		OptionType option() const			{	return _it->first;				}
-		const OptionArgs&  args() const		{	return _it->second.args;		}
-		_iterator<Container, Adapter, OptionType>& operator ++()	{	++_it; return *this;	}
+        OptionType operator*() const        {   return option();                }
+
+		_iterator<Container, Adapter, OptionType>& operator ++()    { ++_it; return *this;        }
+
+        template <class T>
+        GetOpt_pp& operator >> (T& t)
+        {
+            Adapter::extract(t, *_getopt_pp, option());
+            return *_getopt_pp;
+        }
 	};
 	
-	ItPair begin() const
+	ItCtorData begin()
 	{
-		return ItPair(_shortOps.begin(), _longOps.begin() );
+        ItCtorData ret;
+        ret.short_iter = _shortOps.begin();
+        ret.long_iter  = _longOps.begin();
+        ret.getopt_pp  = this;
+		return ret;
 	}
 	
-	ItPair end() const
+	ItCtorData end()
 	{
-		return ItPair(_shortOps.end(), _longOps.end());
+        ItCtorData ret;
+        ret.short_iter = _shortOps.end();
+        ret.long_iter  = _longOps.end();
+        ret.getopt_pp  = this;
+		return ret;
 	}
 	
 	struct ShortAdapter
 	{
-		static ShortOptions::const_iterator adapt(ItPair p)
+		static ShortOptions::const_iterator adapt(const ItCtorData& data)
 		{
-			return p.first;
+			return data.short_iter;
 		}
+
+        template <class T>
+        static void extract(T& t, GetOpt_pp& getopt_pp, char option)
+        {
+            getopt_pp >> Option(option, t);
+        }
 	};
 	
 	struct LongAdapter
 	{
-		static LongOptions::const_iterator adapt(ItPair p)
+		static LongOptions::const_iterator adapt(const ItCtorData& data)
 		{
-			return p.second;
+			return data.long_iter;
 		}
+
+        template <class T>
+        static void extract(T& t, GetOpt_pp& getopt_pp, const std::string& option)
+        {
+            getopt_pp >> Option('\0', option, t);
+        }
 	};
 	
 	typedef _iterator<ShortOptions, ShortAdapter, char> short_iterator;

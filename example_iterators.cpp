@@ -32,19 +32,27 @@ int main(int argc, char* argv[])
 {
 	GetOpt_pp ops(argc, argv);
 	char short_opt[2] = {0, 0};
+    std::vector<int> vec;
 
 	std::cout << "Short options:" << std::endl;
 	
 	for(GetOpt_pp::short_iterator it = ops.begin(); it != ops.end(); ++it)
 	{
-		short_opt[0] = it.option();
-		std::cout << "\t" << short_opt << " has " << it.args().size() << " arguments." << std::endl;
+		short_opt[0] = *it;
+        it >> vec;
+        
+		std::cout << "\t" << short_opt << " has " << vec.size() << " integer arguments." << std::endl;
 	}	
 	
+    vec.clear();
 	std::cout << std::endl << "Long options:" << std::endl;
 	
 	for(GetOpt_pp::long_iterator it = ops.begin(); it != ops.end(); ++it)
-		std::cout << "\t" << it.option() << " has " << it.args().size() << " arguments." << std::endl;
+    {
+        it >> vec;
+		std::cout << "\t" << *it << " has ";
+        std::cout << vec.size() << " integer arguments." << std::endl;
+    }
 	
 	return 0;
 }

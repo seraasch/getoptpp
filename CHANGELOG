@@ -1,3 +1,10 @@
+Version 2.14
+============    
+    * several fixes to the makefile. Additionally, non-root users can use static lib.
+    * GPLv3 heading fixed (referred to an old application).
+    * refactor the parser to be helped by the options.
+    * replaced EMPTY_OPTION by GlobalOption logic.
+
 Version 2.13
 ============
     * fix for Mac OS X

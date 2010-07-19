@@ -18,7 +18,7 @@ GetOpt_pp:	Yet another C++ version of getopt.
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
     
 
-    Example testing empty options.
+    Example testing global options.
     Usage:
     	pass a list of arguments to the program, without specifying any option.
     	For example: ./program one two three
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 	
 	GetOpt_pp ops(argc, argv);
 	
-	ops >> Option(GetOpt_pp::EMPTY_OPTION,args );
+	ops >> GlobalOption(args);
 	
 	std::cout << "RAN: " << ops.app_name() << " ";
 	for (std::vector<std::string>::const_iterator it = args.begin(); it != args.end(); ++it)
