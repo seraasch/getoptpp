@@ -193,7 +193,7 @@ protected:
         else
         {
             option_token->type = Token::OptionArgument;
-            return convert<T>(token->value, this->target, flags);
+            return convert<T>(option_token->value, this->target, flags);
         }
 	}
 public:	
