@@ -60,7 +60,7 @@ GETOPT_INLINE void GetOpt_pp::_parse(int argc, char* argv[])
 		const char current = argv[i][0];
 		const char next = argv[i][1];
 		
-		if (current == '-' && (isalpha(next) || next == '-' ) )
+		if (current == '-' && (isalnum(next) || next == '-' ) )
 		{			
 			// see what's next, differentiate whether it's short or long:
 			if (next == '-' && argv[i][2] != 0)

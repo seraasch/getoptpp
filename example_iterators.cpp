@@ -42,9 +42,9 @@ int main(int argc, char* argv[])
         it >> vec;
         
 		std::cout << "\t" << short_opt << " has " << vec.size() << " integer arguments." << std::endl;
+		vec.clear();
 	}	
 	
-    vec.clear();
 	std::cout << std::endl << "Long options:" << std::endl;
 	
 	for(GetOpt_pp::long_iterator it = ops.begin(); it != ops.end(); ++it)
