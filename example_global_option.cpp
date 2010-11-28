@@ -1,7 +1,7 @@
 /*
-GetOpt_pp:	Yet another C++ version of getopt.
+GetOpt_pp:  Yet another C++ version of getopt.
     Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
-    
+
     This file is part of GetOpt_pp.
 
     GetOpt_pp is free software: you can redistribute it and/or modify
@@ -16,13 +16,13 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-    
+
 
     Example testing global options.
     Usage:
-    	pass a list of arguments to the program, without specifying any option.
-    	For example: ./program one two three
-    
+        pass a list of arguments to the program, without specifying any option.
+        For example: ./program one two three
+
 */
 
 #include <iostream>
@@ -32,18 +32,18 @@ using namespace GetOpt;
 
 int main(int argc, char* argv[])
 {
-	std::vector<std::string> args;
-	
-	GetOpt_pp ops(argc, argv);
-	
-	ops >> GlobalOption(args);
-	
-	std::cout << "RAN: " << ops.app_name() << " ";
-	for (std::vector<std::string>::const_iterator it = args.begin(); it != args.end(); ++it)
-		std::cout << *it << " ";
-		
-	std::cout<<std::endl;
-	
-	return 0;
+    std::vector<std::string> args;
+
+    GetOpt_pp ops(argc, argv);
+
+    ops >> GlobalOption(args);
+
+    std::cout << "RAN: " << ops.app_name() << " ";
+    for (std::vector<std::string>::const_iterator it = args.begin(); it != args.end(); ++it)
+        std::cout << *it << " ";
+
+    std::cout << std::endl;
+
+    return 0;
 }
 

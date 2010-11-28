@@ -1,7 +1,7 @@
 /*
-GetOpt_pp:	Yet another C++ version of getopt.
+GetOpt_pp:  Yet another C++ version of getopt.
     Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
-    
+
     This file is part of GetOpt_pp.
 
     GetOpt_pp is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
     Example of iterating over the options.
     Usage:
-    	nothing special. Just invoke this with any options, it will dump them.
+        nothing special. Just invoke this with any options, it will dump them.
 */
 
 #include <iostream>
@@ -30,30 +30,30 @@ using namespace GetOpt;
 
 int main(int argc, char* argv[])
 {
-	GetOpt_pp ops(argc, argv);
-	char short_opt[2] = {0, 0};
+    GetOpt_pp ops(argc, argv);
+    char short_opt[2] = {0, 0};
     std::vector<int> vec;
 
-	std::cout << "Short options:" << std::endl;
-	
-	for(GetOpt_pp::short_iterator it = ops.begin(); it != ops.end(); ++it)
-	{
-		short_opt[0] = *it;
+    std::cout << "Short options:" << std::endl;
+
+    for (GetOpt_pp::short_iterator it = ops.begin(); it != ops.end(); ++it)
+    {
+        short_opt[0] = *it;
         it >> vec;
-        
-		std::cout << "\t" << short_opt << " has " << vec.size() << " integer arguments." << std::endl;
-		vec.clear();
-	}	
-	
-	std::cout << std::endl << "Long options:" << std::endl;
-	
-	for(GetOpt_pp::long_iterator it = ops.begin(); it != ops.end(); ++it)
+
+        std::cout << "\t" << short_opt << " has " << vec.size() << " integer arguments." << std::endl;
+        vec.clear();
+    }
+
+    std::cout << std::endl << "Long options:" << std::endl;
+
+    for (GetOpt_pp::long_iterator it = ops.begin(); it != ops.end(); ++it)
     {
         it >> vec;
-		std::cout << "\t" << *it << " has ";
+        std::cout << "\t" << *it << " has ";
         std::cout << vec.size() << " integer arguments." << std::endl;
     }
-	
-	return 0;
+
+    return 0;
 }
 

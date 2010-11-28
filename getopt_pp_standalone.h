@@ -1,7 +1,7 @@
 /*
-GetOpt_pp:	Yet another C++ version of getopt.
+GetOpt_pp:  Yet another C++ version of getopt.
     Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
-    
+
     This file is part of GetOpt_pp.
 
     GetOpt_pp is free software: you can redistribute it and/or modify

@@ -1,7 +1,7 @@
 /*
-GetOpt_pp:	Yet another C++ version of getopt.
+GetOpt_pp:  Yet another C++ version of getopt.
     Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
-    
+
     This file is part of GetOpt_pp.
 
     GetOpt_pp is free software: you can redistribute it and/or modify
@@ -20,10 +20,10 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
     Example using format flags: entering numbers in hex.
     Usage:
-    	short option: -i number
-    	long option:  --number number
+        short option: -i number
+        long option:  --number number
     where number has the form 0xNNNN
-    
+
 */
 
 #include <iostream>
@@ -33,14 +33,14 @@ using namespace GetOpt;
 
 int main(int argc, char* argv[])
 {
-	int i;
-	
-	GetOpt_pp ops(argc, argv);
-	
-	ops >> std::hex >> Option('i', "number", i);
-	
-	std::cout << std::hex << "Number entered: (hex)" << i << " (dec)" << std::dec << i << std::endl;
-	
-	return 0;
+    int i;
+
+    GetOpt_pp ops(argc, argv);
+
+    ops >> std::hex >> Option('i', "number", i);
+
+    std::cout << std::hex << "Number entered: (hex)" << i << " (dec)" << std::dec << i << std::endl;
+
+    return 0;
 }
 

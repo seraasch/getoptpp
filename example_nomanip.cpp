@@ -1,7 +1,7 @@
 /*
-GetOpt_pp:	Yet another C++ version of getopt.
+GetOpt_pp:  Yet another C++ version of getopt.
     Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
-    
+
     This file is part of GetOpt_pp.
 
     GetOpt_pp is free software: you can redistribute it and/or modify
@@ -20,9 +20,9 @@ GetOpt_pp:	Yet another C++ version of getopt.
 
     Example of a Hello World, without using manipulators.
     Usage:
-    	short option: -n Name
-    	long option:  --name Name
-    
+        short option: -n Name
+        long option:  --name Name
+
 */
 
 #include <iostream>
@@ -31,11 +31,11 @@ GetOpt_pp:	Yet another C++ version of getopt.
 using namespace GetOpt;
 
 int main(int argc, char* argv[])
-{	
-	GetOpt_pp ops(argc, argv);
-		
-	std::cout << "Hello " << ops.getopt<std::string>('n', "name", "world") << "!" << std::endl;
-	
-	return 0;
+{
+    GetOpt_pp ops(argc, argv);
+
+    std::cout << "Hello " << ops.getopt<std::string>('n', "name", "world") << "!" << std::endl;
+
+    return 0;
 }
 
