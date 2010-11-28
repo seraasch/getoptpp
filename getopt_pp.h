@@ -119,6 +119,8 @@ struct _Option
 
     virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const = 0;
     virtual ~_Option() {}
+
+    static const char NO_SHORT_OPT = 0;
 };
 
 template <class T> inline _Option::Result convert(const std::string& s, T& result, std::ios::fmtflags flags)
@@ -161,7 +163,11 @@ public:
     virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
     {
         Result ret = OptionNotFound;
-        ShortOptions::iterator it = short_ops.find(short_opt);
+        ShortOptions::iterator it;
+        if (short_opt == _Option::NO_SHORT_OPT)
+            it = short_ops.end();
+        else
+            it = short_ops.find(short_opt);
 
         if (it != short_ops.end())
         {
@@ -366,6 +372,13 @@ inline _OptionT<T> Option(char short_opt, T& target)
     return _OptionT<T>(short_opt, std::string(), target);
 }
 
+// LongOpt only
+template <class T>
+inline _OptionT<T> Option(const std::string& long_opt, T& target)
+{
+    return _OptionT<T>(_Option::NO_SHORT_OPT, long_opt, target);
+}
+
 // Defaulted version
 template <class T>
 inline _DefValOption<T, _OptionT<T> >
@@ -380,6 +393,14 @@ inline _DefValOption<T, _OptionT<T> > Option(char short_opt, T& target, const T&
     return _DefValOption<T, _OptionT<T> >(short_opt, std::string(), target, def);
 }
 
+//  no short opt.
+template <class T>
+inline _DefValOption<T, _OptionT<T> >
+Option(const std::string& long_opt, T& target, const T& def)
+{
+    return _DefValOption<T, _OptionT<T> >(_Option::NO_SHORT_OPT, long_opt, target, def);
+}
+
 // Defaults for strings:
 inline _DefValOption<std::string, _OptionT<std::string> >
 Option(char short_opt, const std::string& long_opt, std::string& target, const char* def)
@@ -390,6 +411,13 @@ Option(char short_opt, const std::string& long_opt, std::string& target, const c
 inline _OptionT<std::string> Option(char short_opt, std::string& target, const char* def)
 {
     return _DefValOption<std::string, _OptionT<std::string> >(short_opt, std::string(), target, def);
+}
+
+//  no short opt.
+inline _DefValOption<std::string, _OptionT<std::string> >
+Option(const std::string& long_opt, std::string& target, const char* def)
+{
+    return _DefValOption<std::string, _OptionT<std::string> >(_Option::NO_SHORT_OPT, long_opt, target, def);
 }
 
 // Global Option:
@@ -425,6 +453,14 @@ public:
         : short_opt(short_opt), present(NULL)
     {}
 
+    // WITHOUT short_opt
+    OptionPresent(const std::string& long_opt, bool& present)
+        : short_opt(_Option::NO_SHORT_OPT), long_opt(long_opt), present(&present)
+    {}
+
+    OptionPresent(const std::string& long_opt)
+        : short_opt(_Option::NO_SHORT_OPT), long_opt(long_opt), present(NULL)
+    {}
 protected:
     virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
     {

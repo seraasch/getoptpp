@@ -1,5 +1,9 @@
-Version 2.14
-============    
+Version 2.15RC1
+===============
+    * Added support for long flag only options (issue 21)
+
+Version 2.14RC1
+===============
     * several fixes to the makefile. Additionally, non-root users can use static lib.
     * GPLv3 heading fixed (referred to an old application).
     * refactor the parser to be helped by the options.

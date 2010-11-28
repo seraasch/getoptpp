@@ -33,12 +33,14 @@ using namespace GetOpt;
 int main(int argc, char* argv[])
 {
     std::string name;
+    std::string salute;
 
     GetOpt_pp ops(argc, argv);
 
     ops >> Option('n', "name", name, "world");      /* the default name is 'world' */
+    ops >> Option("salute", salute, "Hello");         /* the default salute is 'Hello' */
 
-    std::cout << "Hello " << name << "!" << std::endl;
+    std::cout << salute << " " << name << "!" << std::endl;
 
     return 0;
 }
