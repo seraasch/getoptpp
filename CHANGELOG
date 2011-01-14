@@ -1,6 +1,7 @@
 Version 2.15RC2
 ===============
     * Fixed issue 23: option_remains didn't check global options.
+    * Removed warnings of unused parameters when compiled with -Wextra
 
 Version 2.15RC1
 ===============

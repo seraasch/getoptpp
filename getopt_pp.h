@@ -136,7 +136,7 @@ template <class T> inline _Option::Result convert(const std::string& s, T& resul
         return _Option::OK;
 }
 
-template <> inline _Option::Result convert<std::string>(const std::string& s, std::string& result, std::ios::fmtflags flags)
+template <> inline _Option::Result convert<std::string>(const std::string& s, std::string& result, std::ios::fmtflags /*flags*/)
 {
     result = s;
     return _Option::OK;
@@ -160,7 +160,7 @@ public:
         : short_opt(short_opt), long_opt(long_opt), target(target)
     {}
 
-    virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
+    virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* /*first*/, std::ios::fmtflags flags) const
     {
         Result ret = OptionNotFound;
         ShortOptions::iterator it;
@@ -318,7 +318,7 @@ template <class T>
 class _GlobalOption<std::vector<T> > : public _Option
 {
     std::vector<T>& target;
-    virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
+    virtual Result operator()(ShortOptions& /*short_ops*/, LongOptions& /*long_ops*/, Token* first, std::ios::fmtflags flags) const
     {
         // find first token GlobalArgument or UnknownYet (candidate)
         Token* token(first);
@@ -462,7 +462,7 @@ public:
         : short_opt(_Option::NO_SHORT_OPT), long_opt(long_opt), present(NULL)
     {}
 protected:
-    virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
+    virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* /*first*/, std::ios::fmtflags /*flags*/) const
     {
         bool found;
         ShortOptions::iterator it = short_ops.find(short_opt);
