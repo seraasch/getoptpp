@@ -1,3 +1,7 @@
+Version 2.15RC2
+===============
+    * Fixed issue 23: option_remains didn't check global options.
+
 Version 2.15RC1
 ===============
     * Added support for long flag only options (issue 21)

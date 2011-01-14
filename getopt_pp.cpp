@@ -228,6 +228,17 @@ GETOPT_INLINE bool GetOpt_pp::options_remain() const
         }
     }
 
+    if (!remain)
+    {
+        // check for the global arguments:
+        Token* token = _first_token;
+        while (!remain && token != NULL)
+        {
+            remain = ( token->type == Token::GlobalArgument || token->type == Token::UnknownYet );
+            token = token->next;
+        }
+    }
+
     return remain;
 }
 
