@@ -1,6 +1,5 @@
 /*
-GetOpt_pp:  Yet another C++ version of getopt.
-    Copyright (C) 2007, 2008  Daniel Gutson, FuDePAN
+    Copyright (C) 2011  Hugo Arregui, FuDePAN
 
     This file is part of GetOpt_pp.
 
@@ -17,18 +16,28 @@ GetOpt_pp:  Yet another C++ version of getopt.
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-    Example of extending a type.
-    Usage:
-        short option: -d mm/dd/yyyy
-        long option:  --date mm/dd/yyyy
-
 */
 
+#include <string>
+#include <vector>
 #include <iostream>
-#include "getopt_pp.h"
+#include <mili/mili.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include "getoptpp/getopt_pp.h"
 
 using namespace GetOpt;
+using namespace std;
+using namespace mili;
+
+TEST(GetOptPPFormatTest, hexa)
+{
+    const char* argv[] = {"test", "-i", "15"}; //15 hex
+    GetOpt_pp ops(3, argv);
+    int i;
+    ops >> hex >> Option('i', "number", i);
+    ASSERT_EQ(21, i);
+}
 
 struct Date
 {
@@ -42,8 +51,6 @@ struct Date
     }
     Date() {}
     Date(unsigned int y, unsigned int m, unsigned int d) : year(y), month(m), day(d) {}
-
-
 };
 
 namespace GetOpt
@@ -75,18 +82,16 @@ template <> _Option::Result convert<Date>(const std::string& s, Date& d, std::io
 }
 }
 
-int main(int argc, char* argv[])
+TEST(GetOptPPFormatTest, date)
 {
+    const char* argv[] = {"test", "-d", "12/01/1990"}; // mm/dd/yyyy
+
+    GetOpt_pp ops(3, argv);
+
     Date date;
-    const Date myBirthday(1977, 7, 31);
+    ops >> Option('d', "date", date);
 
-    GetOpt_pp ops(argc, argv);
-
-    if (ops >> Option('d', "date", date, myBirthday))
-        std::cout << "Date: " << date.month << "-" << date.day << "-" << date.year << std::endl;
-    else
-        std::cerr << "Invalid date. Enter mm/dd/yyyy" << std::endl;
-
-    return 0;
+    ASSERT_EQ(12, date.month);
+    ASSERT_EQ(1, date.day);
+    ASSERT_EQ(1990, date.year);
 }
-

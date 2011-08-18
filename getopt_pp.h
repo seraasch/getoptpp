@@ -1,5 +1,5 @@
 /*
-GetOpt_pp:  Yet another C++ version of getopt.
+    GetOpt_pp:  Yet another C++ version of getopt.
     Copyright (C) 2007, 2008, 2009, 2010  Daniel Gutson, FuDePAN
 
     This file is part of GetOpt_pp.
@@ -520,11 +520,11 @@ class GetOpt_pp
 
     GETOPT_INLINE Token* _add_token(const std::string& value, Token::Type type);
     GETOPT_INLINE void _init_flags();
-    GETOPT_INLINE void _parse(int argc, char* argv[]);
+    GETOPT_INLINE void _parse(int argc, const char* const* const argv);
     GETOPT_INLINE void _parse_env();
 public:
-    GETOPT_INLINE GetOpt_pp(int argc, char* argv[]);
-    GETOPT_INLINE GetOpt_pp(int argc, char* argv[], _EnvTag);
+    GETOPT_INLINE GetOpt_pp(int argc, const char* const* const argv);
+    GETOPT_INLINE GetOpt_pp(int argc, const char* const* const argv, _EnvTag);
     GETOPT_INLINE ~GetOpt_pp();
 
     std::ios_base::iostate exceptions() const
@@ -569,7 +569,7 @@ public:
 
     GETOPT_INLINE GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
 
-    GETOPT_INLINE GetOpt_pp& operator >> (std::ios_base& (*iomanip)(std::ios_base&));
+    GETOPT_INLINE GetOpt_pp& operator >> (std::ios_base & (*iomanip)(std::ios_base&));
 
     // Alternative to manipulators, for those who don't like them: the 'getopt' method :)
     // Combination 1: with long option:

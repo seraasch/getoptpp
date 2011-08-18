@@ -49,7 +49,7 @@ GETOPT_INLINE void GetOpt_pp::_init_flags()
     _flags = ss.flags();
 }
 
-GETOPT_INLINE void GetOpt_pp::_parse(int argc, char* argv[])
+GETOPT_INLINE void GetOpt_pp::_parse(int argc, const char* const* const argv)
 {
     _app_name = argv[0];
     bool any_option_processed = false;
@@ -129,14 +129,14 @@ GETOPT_INLINE void GetOpt_pp::_parse_env()
     }
 }
 
-GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, char* argv[])
+GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv)
     : _exc(std::ios_base::goodbit), _first_token(NULL), _last_token(NULL)
 {
     _init_flags();
     _parse(argc, argv);
 }
 
-GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, char* argv[], _EnvTag)
+GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv, _EnvTag)
     : _first_token(NULL), _last_token(NULL)
 {
     _init_flags();
@@ -200,7 +200,7 @@ GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw(GetOp
     return *this;
 }
 
-GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (std::ios_base& (*iomanip)(std::ios_base&))
+GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (std::ios_base & (*iomanip)(std::ios_base&))
 {
     std::stringstream ss;
     ss.flags(_flags);
@@ -234,7 +234,7 @@ GETOPT_INLINE bool GetOpt_pp::options_remain() const
         Token* token = _first_token;
         while (!remain && token != NULL)
         {
-            remain = ( token->type == Token::GlobalArgument || token->type == Token::UnknownYet );
+            remain = (token->type == Token::GlobalArgument || token->type == Token::UnknownYet);
             token = token->next;
         }
     }
