@@ -1,11 +1,8 @@
-
-
-
-OBJECTS=getopt_pp.o
+OBJECTS=src/getopt_pp.o
 
 CPPFLAGS=-Wall
 
-EXAMPLES_SRCS=$(wildcard example_*.cpp)
+EXAMPLES_SRCS=$(wildcard examples/example_*.cpp)
 EXAMPLES_OBJS=$(patsubst %.cpp,%.o,$(EXAMPLES_SRCS))
 EXAMPLE_BIN=$(patsubst %.cpp,%,$(EXAMPLES_SRCS))
 
@@ -40,7 +37,7 @@ $(EXAMPLE_BIN):
 .PHONY: clean install install_dev
 
 clean:
-	@rm -rf $(OBJECTS) libgetopt_pp.so libgetopt_pp.a $(EXAMPLE_BIN) *.o
+	@rm -rf $(OBJECTS) libgetopt_pp.so libgetopt_pp.a $(EXAMPLE_BIN) src/*.o examples/*.o
 
 install_lib: 
 	cp -f $^ $(INSTALL_DIR)
@@ -48,7 +45,7 @@ ifneq ($(SHARED),n)
 	ldconfig
 endif 
 
-install_headers: getopt_pp.h 
+install_headers: getoptpp/getopt_pp.h 
 	cp -f $^ $(DEV_INSTALL_DIR)
 
 install: install_lib install_headers

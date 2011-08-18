@@ -27,7 +27,7 @@ extern char** environ;
 #include <unistd.h>
 #endif
 
-#include "getopt_pp.h"
+#include "getoptpp/getopt_pp.h"
 
 namespace GetOpt
 {

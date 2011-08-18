@@ -1,0 +1,10 @@
+Import ('env')
+
+name = 'getoptpp'
+inc = env.Dir('.')
+src = env.Glob('*.cpp')
+deps = ['getoptpp','gmock','gtest_main', 'mili']
+CXXFLAGS=['-Wall', '-Wextra', '-Wno-sign-compare']
+
+env.Replace(CXXFLAGS=CXXFLAGS, CFLAGS=CXXFLAGS)
+env.CreateTest(name, inc, src, deps)
