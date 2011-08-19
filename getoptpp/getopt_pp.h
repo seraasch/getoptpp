@@ -569,7 +569,7 @@ public:
 
     GETOPT_INLINE GetOpt_pp& operator >> (const _Option& opt) throw(GetOptEx);
 
-    GETOPT_INLINE GetOpt_pp& operator >> (std::ios_base & (*iomanip)(std::ios_base&));
+    GETOPT_INLINE GetOpt_pp& operator >> (std::ios_base& (*iomanip)(std::ios_base&));
 
     // Alternative to manipulators, for those who don't like them: the 'getopt' method :)
     // Combination 1: with long option:
