@@ -1,6 +1,7 @@
 OBJECTS=src/getopt_pp.o
 
-CPPFLAGS=-Wall
+CXXFLAGS=-Wall -I.
+
 
 EXAMPLES_SRCS=$(wildcard examples/example_*.cpp)
 EXAMPLES_OBJS=$(patsubst %.cpp,%.o,$(EXAMPLES_SRCS))
@@ -16,7 +17,7 @@ library: libgetopt_pp.a
 $(EXAMPLE_BIN): libgetopt_pp.a
 install_lib: libgetopt_pp.a 
 else
-CPPFLAGS:=$(CPPFLAGS) -fPIC
+CXXFLAGS:=$(CXXFLAGS) -fPIC
 library: libgetopt_pp.so
 $(EXAMPLE_BIN): libgetopt_pp.so
 install_lib: libgetopt_pp.so 
@@ -26,13 +27,12 @@ libgetopt_pp.a: $(OBJECTS)
 	ar -cvq $@ $^
 
 libgetopt_pp.so: $(OBJECTS)
-	g++ -shared -o $@ $^
+	g++ -I. -shared -o $@ $^
 
 examples: $(EXAMPLES_OBJS) $(EXAMPLE_BIN)
 
-
 $(EXAMPLE_BIN): 
-	g++ -o $@ $@.o -lgetopt_pp -L.
+	g++ -I. -o $@ $@.o -lgetopt_pp -L.
 
 .PHONY: clean install install_dev
 
@@ -49,3 +49,5 @@ install_headers: getoptpp/getopt_pp.h
 	cp -f $^ $(DEV_INSTALL_DIR)
 
 install: install_lib install_headers
+
+all: libgetopt_pp.so
