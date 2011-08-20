@@ -8,8 +8,8 @@ EXAMPLES_OBJS=$(patsubst %.cpp,%.o,$(EXAMPLES_SRCS))
 EXAMPLE_BIN=$(patsubst %.cpp,%,$(EXAMPLES_SRCS))
 
 _PREFIX=$(if $(PREFIX),$(PREFIX),/usr)
-INSTALL_DIR=$(_PREFIX)/lib
-DEV_INSTALL_DIR=$(_PREFIX)/include
+INSTALL_DIR=$(_PREFIX)/lib/getoptpp
+DEV_INSTALL_DIR=$(_PREFIX)/include/getoptpp
 
 
 ifeq ($(SHARED),n)
@@ -40,12 +40,14 @@ clean:
 	@rm -rf $(OBJECTS) libgetopt_pp.so libgetopt_pp.a $(EXAMPLE_BIN) src/*.o examples/*.o
 
 install_lib: 
+	mkdir -p $(INSTALL_DIR)
 	cp -f $^ $(INSTALL_DIR)
 ifneq ($(SHARED),n)
 	ldconfig
 endif 
 
 install_headers: getoptpp/getopt_pp.h 
+	mkdir -p $(DEV_INSTALL_DIR)
 	cp -f $^ $(DEV_INSTALL_DIR)
 
 install: install_lib install_headers
