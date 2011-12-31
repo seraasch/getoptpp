@@ -45,12 +45,22 @@ struct Date
     unsigned int month;
     unsigned int day;
 
+    Date() :
+        year(), 
+        month(), 
+        day() 
+    {}
+
+    Date(unsigned int y, unsigned int m, unsigned int d) : 
+        year(y), 
+        month(m), 
+        day(d) 
+    {}
+
     bool valid() const
     {
-        return (month >= 1 && month <= 12 && day >= 1 && day <= 31);
+        return in_range(month, 1U, 12U) && in_range(day, 1U, 31U);
     }
-    Date() {}
-    Date(unsigned int y, unsigned int m, unsigned int d) : year(y), month(m), day(d) {}
 };
 
 namespace GetOpt
