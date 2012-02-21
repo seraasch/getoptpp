@@ -19,7 +19,8 @@ GetOpt_pp:  Yet another C++ version of getopt.
 */
 
 #if __APPLE__
-extern char** environ;
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
 #elif _WIN32
 #include <Stdio.h>
 #define environ _environ
