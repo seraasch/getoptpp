@@ -1,0 +1,7 @@
+Import ('env')
+
+inc = env.Dir('.')
+deps = ['getoptpp']
+
+env.CreateProgram('getoptpp-example_general1', inc, env.File('example_general1.cpp'), deps)
+
