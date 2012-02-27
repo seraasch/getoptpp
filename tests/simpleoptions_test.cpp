@@ -113,3 +113,16 @@ TEST(GetOptPPTest, global_options)
     }
 
 }
+
+TEST(GetOptPPTest, negative_integers)
+{
+    const char* argv[] = {"--test", "1", "-32", "4"};
+
+    GetOpt_pp ops(4, argv);
+
+    std::vector<int> args;
+    ops >> Option("test", args);
+
+    ASSERT_EQ(3, args.size());
+}
+
