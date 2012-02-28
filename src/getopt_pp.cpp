@@ -73,16 +73,37 @@ GETOPT_INLINE void GetOpt_pp::_parse(int argc, const char* const* const argv)
             }
             else
             {
-                // short option
-                // iterate over all of them, keeping the last one in currentData
-                // (so the intermediates will generate 'existent' arguments, as of '-abc')
-                size_t j = 1;
-                do
+                // check if it is a negative number: rules
+                //  * floating point negative numbers are straight classified as 'arguments'
+                //  * integer negative numbers of more than 1 digit length are also 'arguments'
+                //  * integer negatives of 1 digit length can be either arguments or short options.
+                //  * anything else: short options.
+                const std::string token(argv[i]);
+                int anInt;
+                float aFloat;
+                std::stringstream dummy;
+                if ( convert(token, anInt, dummy.flags()) == _Option::OK )
                 {
-                    _shortOps[argv[i][j]].token = _add_token(std::string(&argv[i][j], 1), Token::ShortOption);
-                    j++;
+                    if ( token.size() > 2 ) // if it's larger than -d (d=digit), then assume it's a negative number:
+                        _add_token(token, any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
+                    else // size == 2: it's a 1 digit negative number
+                        _shortOps[argv[i][1]].token = _add_token(token, Token::PossibleNegativeArgument);
                 }
-                while (argv[i][j] != 0);
+                else if ( convert(token, aFloat, dummy.flags()) == _Option::OK )
+                    _add_token(token, any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
+                else
+                {
+                    // short option
+                    // iterate over all of them, keeping the last one in currentData
+                    // (so the intermediates will generate 'existent' arguments, as of '-abc')
+                    size_t j = 1;
+                    do
+                    {
+                        _shortOps[argv[i][j]].token = _add_token(std::string(&argv[i][j], 1), Token::ShortOption);
+                        j++;
+                    }
+                    while (argv[i][j] != 0);
+                }
 
                 any_option_processed = true;
             }

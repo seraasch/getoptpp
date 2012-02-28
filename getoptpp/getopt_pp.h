@@ -51,6 +51,7 @@ struct Token
         GlobalArgument,
         GlobalArgumentUsed, // already read, skip in the next read
         OptionArgument,
+        PossibleNegativeArgument,
         UnknownYet  // can be a global option, or an option of the previous one
     };
 
@@ -78,7 +79,7 @@ struct Token
             return NULL;
         else
         {
-            if (next->type == UnknownYet || next->type == OptionArgument)
+            if (next->type == UnknownYet || next->type == OptionArgument || next->type == PossibleNegativeArgument)
                 return next;
             else
                 return NULL;
@@ -121,6 +122,12 @@ struct _Option
     virtual ~_Option() {}
 
     static const char NO_SHORT_OPT = 0;
+protected:
+    static void setTokenAsUsed(const Token* token, ShortOptions& short_ops)
+    {
+        if (token->type == Token::PossibleNegativeArgument)
+            short_ops.erase(token->value[1]);
+    }
 };
 
 template <class T> inline _Option::Result convert(const std::string& s, T& result, std::ios::fmtflags flags)
@@ -149,7 +156,7 @@ template <class T> class _OptionTBase : public _Option
     const std::string long_opt;
 protected:
     T& target;
-    virtual Result _assign(Token* token, std::ios::fmtflags flags) const = 0;
+    virtual Result _assign(Token* token, std::ios::fmtflags flags, ShortOptions& short_ops) const = 0;
 
 public:
     _OptionTBase(const _OptionTBase<T>& other)
@@ -172,7 +179,7 @@ public:
         if (it != short_ops.end())
         {
             it->second.flags = OptionData::CmdLine_Extracted;
-            ret = _assign(it->second.token, flags);
+            ret = _assign(it->second.token, flags, short_ops);
         }
         else if (!long_opt.empty())
         {
@@ -180,7 +187,7 @@ public:
             if (it != long_ops.end())
             {
                 it->second.flags = OptionData::CmdLine_Extracted;
-                ret = _assign(it->second.token, flags);
+                ret = _assign(it->second.token, flags, short_ops);
             }
         }
 
@@ -192,13 +199,14 @@ public:
 template <class T> class _OptionT : public _OptionTBase<T>
 {
 protected:
-    virtual _Option::Result _assign(Token* token, std::ios::fmtflags flags) const
+    virtual _Option::Result _assign(Token* token, std::ios::fmtflags flags, ShortOptions& short_ops) const
     {
         Token* const option_token = token->get_next_option_argument();
         if (option_token == NULL)
             return _Option::NoArgs;
         else
         {
+            this->setTokenAsUsed(option_token, short_ops);
             option_token->type = Token::OptionArgument;
             return convert<T>(option_token->value, this->target, flags);
         }
@@ -217,7 +225,7 @@ public:
 template <class T> class _OptionT<std::vector<T> > : public _OptionTBase<std::vector<T> >
 {
 protected:
-    virtual _Option::Result _assign(Token* token, std::ios::fmtflags flags) const
+    virtual _Option::Result _assign(Token* token, std::ios::fmtflags flags, ShortOptions& short_ops) const
     {
         Token* option_token = token->get_next_option_argument();
         if (option_token != NULL)
@@ -228,6 +236,7 @@ protected:
 
             do
             {
+                this->setTokenAsUsed(option_token, short_ops);
                 result = convert<T>(option_token->value, temp, flags);
                 if (result == _Option::OK)
                     this->target.push_back(temp);
@@ -287,17 +296,18 @@ class _GlobalOption : public _Option
     T& target;
     virtual Result operator()(ShortOptions& short_ops, LongOptions& long_ops, Token* first, std::ios::fmtflags flags) const
     {
-        // find first token GlobalArgument or UnknownYet (candidate)
+        // find first token GlobalArgument or UnknownYet (candidate) or PossibleNegativeArgument (candidate too)
         Token* token(first);
         bool found(false);
         while (token != NULL && !found)
         {
-            found = (token->type == Token::GlobalArgument || token->type == Token::UnknownYet);
+            found = (token->type == Token::GlobalArgument || token->type == Token::UnknownYet || token->type == Token::PossibleNegativeArgument);
             if (!found)
                 token = token->next;
         }
         if (found)
         {
+            this->setTokenAsUsed(token, short_ops);
             token->type = Token::GlobalArgumentUsed;
             return convert<T>(token->value, target, flags);
         }
@@ -318,9 +328,9 @@ template <class T>
 class _GlobalOption<std::vector<T> > : public _Option
 {
     std::vector<T>& target;
-    virtual Result operator()(ShortOptions& /*short_ops*/, LongOptions& /*long_ops*/, Token* first, std::ios::fmtflags flags) const
+    virtual Result operator()(ShortOptions& short_ops, LongOptions& /*long_ops*/, Token* first, std::ios::fmtflags flags) const
     {
-        // find first token GlobalArgument or UnknownYet (candidate)
+        // find first token GlobalArgument or UnknownYet (candidate) or PossibleNegativeArgument (candidate too)
         Token* token(first);
         bool found_any(false);
         T tmp;
@@ -328,11 +338,12 @@ class _GlobalOption<std::vector<T> > : public _Option
 
         while (token != NULL && res == OK)
         {
-            if (token->type == Token::GlobalArgument || token->type == Token::UnknownYet)
+            if (token->type == Token::GlobalArgument || token->type == Token::UnknownYet || token->type == Token::PossibleNegativeArgument)
             {
                 res = convert<T>(token->value, tmp, flags);
                 if (res == OK)
                 {
+                    this->setTokenAsUsed(token, short_ops);
                     found_any = true;
                     target.push_back(tmp);
                     token->type = Token::GlobalArgumentUsed;
