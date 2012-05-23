@@ -1,9 +1,13 @@
+Version 2.15RC3
+===============
+    * Fixed issue 26: linker issues under Mac OSX.
+    * Fixed issue 29: Added examples to SConscript (enabling fudepan-build).
+    * Fixed issue 28.
+
 Version 2.15RC2
 ===============
     * Fixed issue 23: option_remains didn't check global options.
     * Removed warnings of unused parameters when compiled with -Wextra
-    * Fixed issue 26: linker issues under Mac OSX.
-    * Added examples to SConscript (enabling fudepan-build).
 
 Version 2.15RC1
 ===============

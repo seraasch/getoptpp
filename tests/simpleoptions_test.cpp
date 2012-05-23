@@ -30,10 +30,12 @@ using namespace GetOpt;
 using namespace std;
 using namespace mili;
 
+#define ARGC    (sizeof(argv)/sizeof(const char*))
+
 TEST(GetOptPPTest, just_long_option)
 {
     const char* argv[] = {"test", "--name", "Hugo"};
-    GetOpt_pp ops(3, argv);
+    GetOpt_pp ops(ARGC, argv);
     string name;
     ops >> Option("name", name);
     ASSERT_EQ("Hugo", name);
@@ -42,7 +44,7 @@ TEST(GetOptPPTest, just_long_option)
 TEST(GetOptPPTest, just_long_option_default)
 {
     const char* argv[] = {"test"};
-    GetOpt_pp ops(1, argv);
+    GetOpt_pp ops(ARGC, argv);
     string name;
     ops >> Option("name", name, "world");
     ASSERT_EQ("world", name);
@@ -51,7 +53,7 @@ TEST(GetOptPPTest, just_long_option_default)
 TEST(GetOptPPTest, both_options_long)
 {
     const char* argv[] = {"test", "--name", "Hugo"};
-    GetOpt_pp ops(3, argv);
+    GetOpt_pp ops(ARGC, argv);
     string name;
     ops >> Option('n', "name", name);
     ASSERT_EQ("Hugo", name);
@@ -60,7 +62,7 @@ TEST(GetOptPPTest, both_options_long)
 TEST(GetOptPPTest, both_options_short)
 {
     const char* argv[] = {"test", "-n", "Hugo"};
-    GetOpt_pp ops(3, argv);
+    GetOpt_pp ops(ARGC, argv);
     string name;
     ops >> Option('n', "name", name);
     ASSERT_EQ("Hugo", name);
@@ -69,7 +71,7 @@ TEST(GetOptPPTest, both_options_short)
 TEST(GetOptPPTest, option_not_found)
 {
     const char* argv[] = {"test"};
-    GetOpt_pp ops(1, argv);
+    GetOpt_pp ops(ARGC, argv);
     ops.exceptions(ios::eofbit);
     string name;
 
@@ -79,7 +81,7 @@ TEST(GetOptPPTest, option_not_found)
 TEST(GetOptPPTest, no_manipulators)
 {
     const char* argv[] = {"test", "-n", "Hugo"};
-    GetOpt_pp ops(3, argv);
+    GetOpt_pp ops(ARGC, argv);
     string name;
 
     ASSERT_EQ("Hugo", ops.getopt<std::string>('n', "name"));
@@ -88,7 +90,7 @@ TEST(GetOptPPTest, no_manipulators)
 TEST(GetOptPPTest, no_manipulators_option_not_found)
 {
     const char* argv[] = {"test"};
-    GetOpt_pp ops(1, argv);
+    GetOpt_pp ops(ARGC, argv);
     ops.exceptions(ios::eofbit);
 
     ASSERT_THROW(ops.getopt<std::string>('n', "name"), OptionNotFoundEx);
@@ -99,7 +101,7 @@ TEST(GetOptPPTest, global_options)
 {
     const char* argv[] = {"test", "arg1", "arg2"};
 
-    GetOpt_pp ops(3, argv);
+    GetOpt_pp ops(ARGC, argv);
 
     std::vector<std::string> args;
     ops >> GlobalOption(args);
@@ -113,3 +115,70 @@ TEST(GetOptPPTest, global_options)
     }
 
 }
+
+TEST(GetOptPPTest, negative_integer)
+{
+    const char* argv[] = {"app", "--test", "-1", "-12"};
+
+    GetOpt_pp ops(ARGC, argv);
+
+    int value = 0;
+    ops >> Option("test", value);
+
+    ASSERT_EQ(-1, value);
+    ASSERT_FALSE(ops >> OptionPresent('1'));
+    ASSERT_FALSE(ops >> OptionPresent('2'));
+}
+
+TEST(GetOptPPTest, negative_float)
+{
+    const char* argv[] = {"app", "--test", "-.23"};
+
+    GetOpt_pp ops(ARGC, argv);
+
+    float value = 0;
+    ops >> Option("test", value);
+
+    ASSERT_EQ(float(-.23), value);
+    ASSERT_FALSE(ops >> OptionPresent('2'));
+    ASSERT_FALSE(ops >> OptionPresent('3'));
+}
+
+TEST(GetOptPPTest, negative_integer_as_string_token)
+{
+    const char* argv[] = {"app", "--test", "-1"};
+
+    GetOpt_pp ops(ARGC, argv);
+
+    ASSERT_TRUE(ops >> OptionPresent('1'));
+}
+
+TEST(GetOptPPTest, negative_integers_vector)
+{
+    const char* argv[] = {"app", "--test", "1", "-32", "4"};
+
+    GetOpt_pp ops(ARGC, argv);
+
+    std::vector<int> args;
+    ops >> Option("test", args);
+
+    ASSERT_EQ(3, args.size());
+}
+
+TEST(GetOptPPTest, negative_integers_as_string_tokens)
+{
+    const char* argv[] = {"app", "--test", "-3","-32", "4", "-1a"};
+
+    GetOpt_pp ops(ARGC, argv);
+
+    std::vector<string> test_args;
+    ops >> Option('t', "test", test_args);
+    ASSERT_EQ(3, test_args.size());
+    ASSERT_TRUE(ops >> OptionPresent('1'));
+    ASSERT_TRUE(ops >> OptionPresent('a'));
+
+    ASSERT_FALSE(ops >> OptionPresent('2'));
+    ASSERT_FALSE(ops >> OptionPresent('3'));
+    ASSERT_FALSE(ops >> OptionPresent('4'));
+}
+
