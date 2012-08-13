@@ -1,5 +1,5 @@
-Version 2.15RC3
-===============
+Version 2.15
+============
     * Fixed issue 26: linker issues under Mac OSX.
     * Fixed issue 29: Added examples to SConscript (enabling fudepan-build).
     * Fixed issue 28.
