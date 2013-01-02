@@ -230,3 +230,25 @@ TEST(GetOptPPTest, suboptions_bad)
     EXPECT_TRUE(exception_thrown);
 }
 
+TEST(GetOptPPTest, globals_last)
+{
+    const char* argv[] = {"app", "one", "two", "-a", "-b", "1", "2", "-c", "3"};
+
+    GetOpt_pp ops(ARGC, argv);
+
+    vector<int> ivec;
+
+    EXPECT_TRUE( ops >> OptionPresent('a') );
+
+    EXPECT_TRUE( ops >> Option('b', ivec ) );
+    EXPECT_EQ(2, ivec.size());
+
+    ivec.clear();
+    EXPECT_TRUE( ops >> Option('c', ivec ) );
+    EXPECT_EQ(1, ivec.size());
+
+    vector<string> svec;
+    EXPECT_TRUE( ops >> GlobalOption(svec) );
+    EXPECT_EQ(2, svec.size() );
+}
+

@@ -1,6 +1,8 @@
 Version 2.17
 ============
     * Implemented issue 22: parse suboptions @file.
+    * Fixed issue reported by Matthias Siebert that caused extracted option arguments
+      to still remain available as global options.
 
 Version 2.16
 ============

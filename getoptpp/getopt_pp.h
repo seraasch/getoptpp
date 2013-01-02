@@ -123,10 +123,12 @@ struct _Option
 
     static const char NO_SHORT_OPT = 0;
 protected:
-    static void setTokenAsUsed(const Token* token, ShortOptions& short_ops)
+    static void setTokenAsUsed(Token* token, ShortOptions& short_ops, Token::Type usedAs)
     {
         if (token->type == Token::PossibleNegativeArgument)
             short_ops.erase(token->value[1]);
+
+        token->type = usedAs;
     }
 };
 
@@ -206,8 +208,7 @@ protected:
             return _Option::NoArgs;
         else
         {
-            this->setTokenAsUsed(option_token, short_ops);
-            option_token->type = Token::OptionArgument;
+            this->setTokenAsUsed(option_token, short_ops, Token::OptionArgument);
             return convert<T>(option_token->value, this->target, flags);
         }
     }
@@ -236,7 +237,7 @@ protected:
 
             do
             {
-                this->setTokenAsUsed(option_token, short_ops);
+                this->setTokenAsUsed(option_token, short_ops, Token::OptionArgument);
                 result = convert<T>(option_token->value, temp, flags);
                 if (result == _Option::OK)
                     this->target.push_back(temp);
@@ -307,8 +308,7 @@ class _GlobalOption : public _Option
         }
         if (found)
         {
-            this->setTokenAsUsed(token, short_ops);
-            token->type = Token::GlobalArgumentUsed;
+            this->setTokenAsUsed(token, short_ops, Token::GlobalArgumentUsed);
             return convert<T>(token->value, target, flags);
         }
         else
@@ -343,10 +343,9 @@ class _GlobalOption<std::vector<T> > : public _Option
                 res = convert<T>(token->value, tmp, flags);
                 if (res == OK)
                 {
-                    this->setTokenAsUsed(token, short_ops);
+                    this->setTokenAsUsed(token, short_ops, Token::GlobalArgumentUsed);
                     found_any = true;
                     target.push_back(tmp);
-                    token->type = Token::GlobalArgumentUsed;
                 }
             }
             token = token->next;
