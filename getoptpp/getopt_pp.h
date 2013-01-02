@@ -512,6 +512,12 @@ struct ArgumentNotFoundEx : GetOptEx {};
 struct TooManyArgumentsEx : GetOptEx {};
 struct OptionNotFoundEx : GetOptEx {};
 struct TooManyOptionsEx : GetOptEx {};
+struct OptionsFileNotFoundEx : GetOptEx
+{
+    const std::string targetFile;
+    OptionsFileNotFoundEx(const std::string& file) : targetFile(file) {}
+    ~OptionsFileNotFoundEx() throw() {}
+};
 
 enum _EnvTag
 {
@@ -529,14 +535,26 @@ class GetOpt_pp
     Token* _first_token;
     Token* _last_token;
 
+    class TokensDeleter
+    {
+        Token*& _first;
+    public:
+        TokensDeleter(Token*& first) : _first(first) {}
+
+        GETOPT_INLINE ~TokensDeleter();
+    };
+
+    TokensDeleter _tokens_deleter;
+
     GETOPT_INLINE Token* _add_token(const std::string& value, Token::Type type);
     GETOPT_INLINE void _init_flags();
-    GETOPT_INLINE void _parse(int argc, const char* const* const argv);
+    GETOPT_INLINE void _parse(const std::vector<std::string>& args);
     GETOPT_INLINE void _parse_env();
+    GETOPT_INLINE void _argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args);
+    GETOPT_INLINE void _parse_sub_file(const std::string& file);
 public:
     GETOPT_INLINE GetOpt_pp(int argc, const char* const* const argv);
     GETOPT_INLINE GetOpt_pp(int argc, const char* const* const argv, _EnvTag);
-    GETOPT_INLINE ~GetOpt_pp();
 
     std::ios_base::iostate exceptions() const
     {

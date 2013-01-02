@@ -18,6 +18,8 @@ GetOpt_pp:  Yet another C++ version of getopt.
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fstream>
+
 #if __APPLE__
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
@@ -50,25 +52,55 @@ GETOPT_INLINE void GetOpt_pp::_init_flags()
     _flags = ss.flags();
 }
 
-GETOPT_INLINE void GetOpt_pp::_parse(int argc, const char* const* const argv)
+GETOPT_INLINE void GetOpt_pp::_parse_sub_file(const std::string& file)
 {
-    _app_name = argv[0];
+    std::ifstream ifile(file.c_str());
+    if (!ifile)
+        throw OptionsFileNotFoundEx(file);
+
+    std::vector<std::string> args;
+    std::string arg;
+
+    while (ifile >> arg)
+        args.push_back(arg);
+
+    _parse(args);
+}
+
+GETOPT_INLINE void GetOpt_pp::_parse(const std::vector<std::string>& args)
+{
     bool any_option_processed = false;
+    const size_t argc = args.size();
+
+    size_t start = 0;
+    if ( _app_name.empty() )
+    {
+        _app_name = args[0];
+        start = 1;
+    }
 
     // parse arguments by their '-' or '--':
     //   (this will be a state machine soon)
-    for (int i = 1; i < argc; i++)
+    for (size_t i = start; i < argc; i++)
     {
-        const char current = argv[i][0];
-        const char next = argv[i][1];
+        const std::string& currentArg = args[i];
 
-        if (current == '-' && next != 0)
+        if (currentArg[0] == '-' && currentArg.size() > 1)
         {
             // see what's next, differentiate whether it's short or long:
-            if (next == '-' && argv[i][2] != 0)
+            if (currentArg[1] == '-')
             {
-                // long option
-                _longOps[&argv[i][2]].token = _add_token(&argv[i][2], Token::LongOption);
+                if ( currentArg.size() > 2 )
+                {
+                    // long option
+                    _longOps[currentArg.substr(2)].token = _add_token(currentArg.substr(2), Token::LongOption);
+                }
+                else
+                {
+                    // it's the -- option alone
+                    _longOps[currentArg].token = _add_token(currentArg, Token::GlobalArgument);
+                }
+
                 any_option_processed = true;
             }
             else
@@ -78,39 +110,38 @@ GETOPT_INLINE void GetOpt_pp::_parse(int argc, const char* const* const argv)
                 //  * integer negative numbers of more than 1 digit length are also 'arguments'
                 //  * integer negatives of 1 digit length can be either arguments or short options.
                 //  * anything else: short options.
-                const std::string token(argv[i]);
                 int anInt;
                 float aFloat;
                 std::stringstream dummy;
-                if ( convert(token, anInt, dummy.flags()) == _Option::OK )
+                if ( convert(currentArg, anInt, dummy.flags()) == _Option::OK )
                 {
-                    if ( token.size() > 2 ) // if it's larger than -d (d=digit), then assume it's a negative number:
-                        _add_token(token, any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
+                    if ( currentArg.size() > 2 ) // if it's larger than -d (d=digit), then assume it's a negative number:
+                        _add_token(currentArg, any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
                     else // size == 2: it's a 1 digit negative number
-                        _shortOps[argv[i][1]].token = _add_token(token, Token::PossibleNegativeArgument);
+                        _shortOps[currentArg[1]].token = _add_token(currentArg, Token::PossibleNegativeArgument);
                 }
-                else if ( convert(token, aFloat, dummy.flags()) == _Option::OK )
-                    _add_token(token, any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
+                else if ( convert(currentArg, aFloat, dummy.flags()) == _Option::OK )
+                    _add_token(currentArg, any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
                 else
                 {
                     // short option
                     // iterate over all of them, keeping the last one in currentData
                     // (so the intermediates will generate 'existent' arguments, as of '-abc')
-                    size_t j = 1;
-                    do
-                    {
-                        _shortOps[argv[i][j]].token = _add_token(std::string(&argv[i][j], 1), Token::ShortOption);
-                        j++;
-                    }
-                    while (argv[i][j] != 0);
+                    for( size_t j = 1; j < currentArg.size(); j++ )
+                        _shortOps[currentArg[j]].token = _add_token(std::string(currentArg, j, 1), Token::ShortOption);
                 }
 
                 any_option_processed = true;
             }
         }
+        else if ( currentArg[0] == '@' && currentArg.size() > 1 )
+        {
+            // suboptions file
+            _parse_sub_file(currentArg.substr(1));
+        }
         else
         {
-            _add_token(argv[i], any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
+            _add_token(currentArg, any_option_processed ? Token::UnknownYet : Token::GlobalArgument);
         }
     }
 
@@ -151,31 +182,42 @@ GETOPT_INLINE void GetOpt_pp::_parse_env()
     }
 }
 
-GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv)
-    : _exc(std::ios_base::goodbit), _first_token(NULL), _last_token(NULL)
+
+GETOPT_INLINE void GetOpt_pp::_argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args)
 {
-    _init_flags();
-    _parse(argc, argv);
+    for (int i = 0; i < argc; i++)
+        args.push_back(argv[i]);
 }
 
-GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv, _EnvTag)
-    : _first_token(NULL), _last_token(NULL)
-{
-    _init_flags();
-    _parse(argc, argv);
-    _parse_env();
-}
-
-GETOPT_INLINE GetOpt_pp::~GetOpt_pp()
+GETOPT_INLINE GetOpt_pp::TokensDeleter::~TokensDeleter()
 {
     Token* next;
-    Token* current(_first_token);
+    Token* current(_first);
     while (current != NULL)
     {
         next = current->next;
         delete current;
         current = next;
     }
+}
+
+GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv)
+    : _exc(std::ios_base::goodbit), _first_token(NULL), _last_token(NULL), _tokens_deleter(_first_token)
+{
+    _init_flags();
+    std::vector<std::string> args;
+    _argc_argv_to_vector(argc, argv, args);
+    _parse(args);
+}
+
+GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, const char* const* const argv, _EnvTag)
+    : _first_token(NULL), _last_token(NULL), _tokens_deleter(_first_token)
+{
+    _init_flags();
+    std::vector<std::string> args;
+    _argc_argv_to_vector(argc, argv, args);
+    _parse(args);
+    _parse_env();
 }
 
 GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (const _Option& opt) throw(GetOptEx)

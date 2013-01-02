@@ -1,3 +1,7 @@
+Version 2.17
+============
+    * Implemented issue 22: parse suboptions @file.
+
 Version 2.16
 ============
     * Fixed issue 31: things like '-?' were not properly parsed.

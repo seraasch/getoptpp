@@ -182,3 +182,51 @@ TEST(GetOptPPTest, negative_integers_as_string_tokens)
     ASSERT_FALSE(ops >> OptionPresent('4'));
 }
 
+TEST(GetOptPPTest, suboptions_good)
+{
+    const char* argv[] = {"app", "-x", "@ref/options_file.opt", "-y"};
+
+    GetOpt_pp ops(ARGC, argv);
+
+    EXPECT_TRUE(ops >> OptionPresent('x'));
+    EXPECT_TRUE(ops >> OptionPresent('y'));
+
+    int arg;
+    EXPECT_TRUE(ops >> Option("first", arg));
+    EXPECT_EQ(1, arg);
+
+    EXPECT_TRUE(ops >> Option("second", arg));
+    EXPECT_EQ(2, arg);
+
+    EXPECT_TRUE(ops >> Option("third", arg));
+    EXPECT_EQ(3, arg);
+
+    EXPECT_TRUE(ops >> Option("fourth", arg));
+    EXPECT_EQ(4, arg);
+
+    EXPECT_TRUE(ops >> Option("fifth", arg));
+    EXPECT_EQ(5, arg);
+
+    EXPECT_TRUE(ops >> Option("sixth", arg));
+    EXPECT_EQ(6, arg);
+
+}
+
+TEST(GetOptPPTest, suboptions_bad)
+{
+    const char* argv[] = {"app", "-x", "@inexistent.opt", "-y"};
+    bool exception_thrown = false;
+
+    try
+    {
+        GetOpt_pp ops(ARGC, argv);
+    }
+    catch (const OptionsFileNotFoundEx& e)
+    {
+        EXPECT_EQ("inexistent.opt", e.targetFile);
+        exception_thrown = true;
+    }
+
+    EXPECT_TRUE(exception_thrown);
+}
+
