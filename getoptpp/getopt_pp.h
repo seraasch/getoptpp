@@ -549,7 +549,7 @@ class GetOpt_pp
     GETOPT_INLINE void _init_flags();
     GETOPT_INLINE void _parse(const std::vector<std::string>& args);
     GETOPT_INLINE void _parse_env();
-    GETOPT_INLINE void _argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args);
+    static GETOPT_INLINE void _argc_argv_to_vector(int argc, const char* const* const argv, std::vector<std::string>& args);
     GETOPT_INLINE void _parse_sub_file(const std::string& file);
 public:
     GETOPT_INLINE GetOpt_pp(int argc, const char* const* const argv);
