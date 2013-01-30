@@ -1,6 +1,7 @@
-Version 2.18 - UNRELEASED
+Version 2.18
 ============
     * Changed GetOpt_pp's license: from GPLv3 to Boost Software License - Version 1.0.
+
 Version 2.17
 ============
     * Implemented issue 22: parse suboptions @file.
